@@ -3,9 +3,9 @@
 
 ## Dependencies
  * [Python3](https://www.python.org/downloads/)
- * [ANTLR4](http://www.antlr.org/download/antlr-4.7.1-complete.jar)
+ * [ANTLR4](https://github.com/antlr/antlr4/blob/master/doc/getting-started.md)
 
-It is recommended to add the ANTLR4 jar file to PATH. Dunno how it works in Windows :confused:
+It is recommended to add the ANTLR4 jar file as an alias. Dunno how it works in Windows :confused:
 
 The parser code is in the .g4 file.
 
