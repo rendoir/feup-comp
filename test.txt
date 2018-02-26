@@ -1,6 +1,21 @@
-function = 123;
+module program1 {
+  data=[100]; // vector of 100 integers
+  mx;         // attribute mx
+  mn;         // attribute mn
 
+  function det(d[]) {
+    i = 0;
+    M = d.size - 1; //d.size is the same as d.length (Java)
+    while (i < M) { // version not optimized
+      a = d[i]; i=i+1; b=d[i];
+      mx = library1.max(a, b);
+      mn = library1.min(a, b);
+    }
+  }
 
-/* QUESTA MERDA
-asdiuashdusiad *
-**/
+  function main() {
+    det(data);
+    io.println("max: ", mx);
+    io.println("min: ", mn);
+  }
+}

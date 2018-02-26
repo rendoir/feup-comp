@@ -11,7 +11,7 @@ def main(argv):
     lexer = yalLexer(input)                          # Create a lexer parser
     stream = CommonTokenStream(lexer)                   # No clue what this is
     parser = yalParser(stream)                       # The actual parser
-    print(parser.expression().toStringTree(recog=parser))  # Prints the matches, if there are multiple matches, need to call parse.pyClass() multiple times
+    print(parser.module().toStringTree(recog=parser))  # Prints the matches, if there are multiple matches, need to call parse.pyClass() multiple times
 
 
 if __name__ == '__main__':
