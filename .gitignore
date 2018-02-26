@@ -1,4 +1,4 @@
 __pycache__
 *.interp
 *.tokens
-yal.+.py
+yal*.py
