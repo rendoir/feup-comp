@@ -1,7 +1,6 @@
-class Rodas {
-  int numrodas;
-  char letra;
+function = 123;
 
-  string toString();
-  string toString(int picas);
-};
+
+/* QUESTA MERDA
+asdiuashdusiad *
+**/
