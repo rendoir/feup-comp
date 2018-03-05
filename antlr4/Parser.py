@@ -342,7 +342,7 @@ class Parser (Recognizer):
         if self.buildParseTrees or hasListener:
             if self._errHandler.inErrorRecoveryMode(self):
                 node = self._ctx.addErrorNode(o)
-            else:
+            elif o.text not in ['{', '}']:
                 node = self._ctx.addTokenNode(o)
             if hasListener:
                 for listener in self._parseListeners:
