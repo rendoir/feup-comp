@@ -1,3 +1,5 @@
+
+
 module program1 {
   data=[100]; // vector of 100 integers
   mx;         // attribute mx
