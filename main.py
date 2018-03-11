@@ -1,9 +1,11 @@
 import sys
 from antlr4 import *
-from antlr4.error import *
+from antlr4.error.ErrorStrategy import *
 from yalLexer import yalLexer
 from yalParser import yalParser
 from yalListener import yalListener
+from yalErrorStrategy import yalErrorStrategy
+from yalErrorListener import yalErrorListener
 
 
 class Listener(yalListener):
@@ -24,18 +26,18 @@ def main(argv):
     lexer = yalLexer(input)                             # Create a lexer parser
     stream = CommonTokenStream(lexer)                   # No clue what this is
     parser = yalParser(stream)                          # The actual parser
-
-
-
-
-    # parser._errHandler = BailErrorStrategy()
+    parser.addErrorListener(yalErrorListener())
+    # parser._errHandler = yalErrorStrategy()
     tree = parser.module()                              # Start the parser (error handling should be before this)
+    # print(tree.toStringTree(recog=parser))
 
-    walker = ParseTreeWalker()
-    listener = Listener()
-    walker.walk(listener, tree)                         # Walks the tree calling the listener when it enters a rule
 
-    # print(tree.toStringTree(recog=parser))   # Prints the matches, if there are multiple matches, need to call parse.pyClass() multiple times
+
+
+    # walker = ParseTreeWalker()
+    # listener = Listener()
+    # walker.walk(listener, tree)                         # Walks the tree calling the listener when it enters a rule
+    # print(tree.toStringTree(recog=parser))   # Prints the matches
 
 
 if __name__ == '__main__':

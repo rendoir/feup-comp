@@ -1,23 +1,30 @@
-
-
 module program1 {
-  data=[100]; // vector of 100 integers
+  data=[100] / vector of 100 integers // ERRO AQUI
   mx;         // attribute mx
   mn;         // attribute mn
 
   function det(d[]) {
     i = 0;
     M = d.size - 1; //d.size is the same as d.length (Java)
-    while (i < M) { // version not optimized
+    while i < M) { // version not optimized // ERRO AQUI
       a = d[i]; i=i+1; b=d[i];
       mx = library1.max(a, b);
       mn = library1.min(a, b);
     }
   }
 
-  function main() {
+  function main( {  // ERRO AQUI
     det(data);
     io.println("max: ", mx);
-    io.println("min: ", mn);
+    io.println("min: " mn); // ERRO AQUI
   }
 }
+
+
+---- GERA ----
+[jalmeida@jalm-pc comp]$ python3 main.py test.txt
+line 2:13 mismatched input '/' expecting ';'
+line 9:10 missing '(' at 'i'
+line 16:17 extraneous input '{' expecting {')', ID}
+line 17:7 mismatched input '(' expecting ')'
+(module module program1 (declaration (scalar_element data) = [ (array_size 100) ] /) declaration (declaration vector) (declaration of 100) declaration (declaration integers) (declaration (scalar_element mx) ;) (declaration (scalar_element mn) ;) (function function det ( (var_list (array_element d [ ])) ) (stmt_list (stmt (assign (left_op (scalar_access i)) = (right_op (term 0)) ;)) (stmt (assign (left_op (scalar_access M)) = (right_op (term (scalar_access d . size)) - (term 1)) ;)) (stmt (while_yal while (exprtest <missing '('> (left_op (scalar_access i)) < (right_op (term (scalar_access M))) )) (stmt_list (stmt (assign (left_op (scalar_access a)) = (right_op (term (array_access d [ (index i) ]))) ;)) (stmt (assign (left_op (scalar_access i)) = (right_op (term (scalar_access i)) + (term 1)) ;)) (stmt (assign (left_op (scalar_access b)) = (right_op (term (array_access d [ (index i) ]))) ;)) (stmt (assign (left_op (scalar_access mx)) = (right_op (term (call library1 . max ( (arg_list (arg a) , (arg b)) )))) ;)) (stmt (assign (left_op (scalar_access mn)) = (right_op (term (call library1 . min ( (arg_list (arg a) , (arg b)) )))) ;))))))) (function function main ( { (var_list (scalar_element det)) ( data ) ; io . println ( "max: " , mx ) ; io . println ( "min: " mn ) ;))
