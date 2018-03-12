@@ -1,3 +1,4 @@
+from antlr_yal import yalParser
 from antlr4.Token import Token
 
 prune = ['{', '}', ';', ',']
