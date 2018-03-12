@@ -1,9 +1,7 @@
 import sys
 from antlr4 import *
 from yalLexer import yalLexer
-from compiler.yalErrorStrategy import *
-from compiler.yalErrorListener import *
-from compiler.yalRealParser import *
+from compiler import *
 
 from pprint import pprint
 
