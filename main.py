@@ -1,7 +1,8 @@
 import sys
 from antlr4 import *
-from yalLexer import yalLexer
+from antlr_yal import *
 from compiler import *
+
 
 from pprint import pprint
 
