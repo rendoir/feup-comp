@@ -1,7 +1,6 @@
 from antlr_yal import yalParser
 from antlr4.Token import Token
-
-prune = ['{', '}', ';', ',']
+from antlr4.tree.Tree import *
 
 class yalRealParser(yalParser):
     def consume(self):
@@ -12,9 +11,10 @@ class yalRealParser(yalParser):
         if self.buildParseTrees or hasListener:
             if self._errHandler.inErrorRecoveryMode(self):
                 node = self._ctx.addErrorNode(o)
-            elif o.text not in prune:
+            else:
                 node = self._ctx.addTokenNode(o)
-            if hasListener:
+
+            if hasListener and node != None:
                 for listener in self._parseListeners:
                     if isinstance(node, ErrorNode):
                         listener.visitErrorNode(node)

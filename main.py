@@ -16,18 +16,62 @@ def main(argv):
     parser = yalRealParser(stream)                          # The actual parser
     parser.addErrorListener(yalErrorListener())
     parser._errHandler = yalErrorStrategy()
+    parser.addParseListener(yalParserListener())
     tree = parser.module()                              # Start the parser (error handling should be before this)
 
     if parser.getNumberOfSyntaxErrors() > 0:
         print(" -> " + RED + str(parser.getNumberOfSyntaxErrors()) + RESET + " Syntax errors detected!")
         return
 
-    children = tree.function(0).getChildren(lambda x: not isinstance(x, TerminalNode))
-    tree.function(0).getTokens(0)
-    print(getFuncArgs(tree.function(0)))
-    #tree.function(0) gets the first function
-    # print(tree.toStringTree(recog=parser))
+    printTree(tree, 0, recog=parser)
 
+
+def printTree(tree, indentation, ruleNames:list=None, recog:Parser=None):
+    if recog is not None:
+        ruleNames = recog.ruleNames
+
+    if isinstance(tree, str):
+        return tree
+    elif tree is None:
+        return "None"
+    elif tree.getChildCount() is 0:
+        return tree.getText()
+    else:
+        name = getNodeText(tree, ruleNames, recog)
+    print("\n" + spaces(indentation) + "(", end='')
+
+    with StringIO() as buf:
+        print(name + " ", end='')
+
+        for i in range(tree.getChildCount()):
+            child = tree.children[i]
+            print(" " + printTree(child, indentation + 1, ruleNames, recog), end='')
+
+            if i is (tree.getChildCount() - 1):
+                print(")\n" + spaces(indentation - 1), end='')
+
+        return buf.getvalue()
+
+def spaces(number):
+    space = ""
+    for i in range(number):
+        space += " "
+
+    return space
+
+def getNodeText(t, rule_names:list=None, recog:Parser=None):
+    if recog is not None:
+        ruleNames = recog.ruleNames
+    if ruleNames is not None:
+        if isinstance(t, RuleNode):
+            if t.getAltNumber()!=0: # should use ATN.INVALID_ALT_NUMBER but won't compile
+                return ruleNames[t.getRuleIndex()]+":"+str(t.getAltNumber())
+            return ruleNames[t.getRuleIndex()]
+        elif isinstance(t, ErrorNode):
+            return str(t)
+        elif isinstance(t, TerminalNode):
+            if t.symbol is not None:
+                return t.symbol.text
 
 #* @description Extracts the function arguments
 #* @arg `root` - The root node of the function in the syntax tree

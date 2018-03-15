@@ -25,7 +25,8 @@ SIZE: 'size';
 
 module: MODULE ID L_BRACKET declaration* function* R_BRACKET;
 
-declaration: (array_element | scalar_element) (ASS_OP (('[' array_size ']') | ADDSUB_OP? NUMBER))? D_COMMA;
+declaration: (array_element | scalar_element)
+    (ASS_OP (('[' array_size ']') | ADDSUB_OP? NUMBER))? D_COMMA;
 
 function: ((FUNC (array_element | scalar_element) ASS_OP ID LPAR var_list? RPAR) | (FUNC ID LPAR var_list? RPAR)) L_BRACKET stmt_list R_BRACKET;
 
@@ -36,7 +37,7 @@ stmt_list: stmt*;
 stmt: while_yal | if_yal | assign | (call D_COMMA);
 assign: left_op ASS_OP right_op D_COMMA;
 left_op: array_access | scalar_access;
-right_op: (term ((ART_OP | BTW_OP | ADDSUB_OP)term)?) | '[' array_size ']';
+right_op: (term ((ART_OP | BTW_OP | ADDSUB_OP) term)?) | '[' array_size ']';
 array_size: scalar_access | NUMBER;
 term: ADDSUB_OP? (NUMBER | call | array_access | scalar_access);
 exprtest: LPAR left_op REL_OP right_op RPAR;

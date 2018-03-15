@@ -4,13 +4,13 @@ module program1 {
   mn;         // attribute mn
 
   function det(d[], A[], b) {
-    i = + 2;
-    M = d.size - 1; //d.size is the same as d.length (Java)
-    while (i < M) { // version not optimized
-      a = d[i]; i=i+1; b=d[i];
-      mx = library1.max(a, b);
-      mn = library1.min(a, b);
-    }
+   i = + 2;
+   M = d.size - 1; //d.size is the same as d.length (Java)
+   while (i < M) { // version not optimized
+     a = d[i]; i=i+1; b=d[i];
+     mx = library1.maxa, b);
+     mn = library1.min(a, b);
+   }
   }
 
   function main() {
@@ -19,3 +19,11 @@ module program1 {
     io.println("min: ", mn);
   }
 }
+
+
+//(module program1
+//  (declaration (scalar_element data) = [ (array_size 100) ])
+//  (declaration (scalar_element mx))
+//  (declaration (scalar_element mn))
+//  (function function main ( ) (stmt_list (stmt (call det ( (arg_list (arg data)) ))) (stmt (call io . println ( (arg_list (arg "max: ") (arg mx)) ))) (stmt (call io . println ( (arg_list (arg "min: ") (arg mn)) )))))
+//)
