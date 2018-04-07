@@ -24,13 +24,14 @@ def eraseChilds(ctx:ParserRuleContext):
         ctx.removeLastChild()
 
 def valid(ctx, min_childs):
-    return ctx.children is not None and ctx.getChildCount() >= min_childs and ctx.exception is not None
+    return ctx.children is not None and ctx.getChildCount() >= min_childs and ctx.exception is None
 
 # TODO erase '[' ']' and replace by string
 class yalParserListener(yalListener):
 
     # Holds [<name>, <declarations>*, <functions>*]
     def exitModule(self, ctx:yalParser.ModuleContext):
+        print(valid(ctx, 4))
         if valid(ctx, 4):
             del ctx.children[0]
             del ctx.children[1]
@@ -38,23 +39,22 @@ class yalParserListener(yalListener):
 
     # Holds [<element>]
     # OR
-    # Holds [<element>, <ASS_OP>, '[', <arr_size>, ']']
+    # Holds [<element>, '[', <arr_size>, ']']
     # OR
-    # Holds [<element>, <ASS_OP>, <negative_or_positive>?, <NUMBER>]
+    # Holds [<element>, <NUMBER>]
     def exitDeclaration(self, ctx:yalParser.DeclarationContext):
         ctx.children[0] = ctx.children[0].getText()
         if valid(ctx, 2):
-            del ctx.children[ctx.getChildCount() - 1] # D_COMMA
             count = ctx.getChildCount()
-            if count > 1:
-                ctx.children[1] = "="
+            del ctx.children[ctx.getChildCount() - 1] # D_COMMA
+
             if count is 4:
+                del ctx.children[1] #Erase '='
                 ctx.children[2] = ctx.children[2].getText() + ctx.children[3].getText()
                 del ctx.children[3]
-            if count is 5: # Array size
-                ctx.children[3] = "[" + ctx.children[3].getText() + "]"
-                del ctx.children[2]
-                del ctx.children[3]
+            if count is 6:
+                del ctx.children[1] #Erase '='
+
 
     # Holds [<var_name> <ASS_OP> <func_name> <var_list>? <stmt_list>]
     # OR

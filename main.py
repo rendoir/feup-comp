@@ -23,7 +23,9 @@ def main(argv):
         print(" -> " + RED + str(parser.getNumberOfSyntaxErrors()) + RESET + " Syntax errors detected!")
         return
 
-    printTree(tree, 0, recog=parser)
+    module = Module()
+    module.parseTree(tree)
+    # printTree(tree, 0, recog=parser)
 
 
 def printTree(tree, indentation, ruleNames:list=None, recog:Parser=None):
