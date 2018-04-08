@@ -50,45 +50,32 @@ class yalParserListener(yalListener):
 
             if count is 4:
                 del ctx.children[1] #Erase '='
-                ctx.children[2] = ctx.children[2].getText() + ctx.children[3].getText()
-                del ctx.children[3]
             if count is 6:
+                ctx.children[3] = ctx.children[3].getText()
                 del ctx.children[1] #Erase '='
 
 
-    # Holds [<var_name> <ASS_OP> <func_name> <var_list>? <stmt_list>]
+    # Holds [<var_name>, <func_name>, <var_list>?, <stmt_list>]
     # OR
-    # Holds [<func_name> <var_list>? <stmt_list>]
+    # Holds [<func_name>, <var_list>?, <stmt_list>]
     # Note: If there are no var_list, the node is None
     def exitFunction(self, ctx:yalParser.FunctionContext):
         if ctx.children is not None:
-            ctx.children[1] = ctx.children[1].getText()
             count = ctx.getChildCount()
-            if count >= 9:
-                ctx.children[2] = "="
-                del ctx.children[0]
-                del ctx.children[3]
-                if count == 10:
-                    del ctx.children[5]
-                    del ctx.children[5]
-                    del ctx.children[6]
-                else:
-                    del ctx.children[4]
-                    del ctx.children[4]
-                    del ctx.children[5]
-                    ctx.children.insert(1, None)
-            elif count >= 7:
-                del ctx.children[0]
-                del ctx.children[1]
-                if count == 8:
-                    del ctx.children[2]
-                    del ctx.children[2]
-                    del ctx.children[3]
-                else:
-                    del ctx.children[1]
-                    del ctx.children[1]
-                    del ctx.children[2]
-                    ctx.children.insert(1, None)
+            del ctx.children[count - 1]
+            del ctx.children[count - 3]
+            count = count - 2
+
+            if ctx.children[2].getText() is '=':
+                del ctx.children[6 if count is 7 else 5]
+                del ctx.children[4]
+                del ctx.children[2]
+                ctx.children[1] = ctx.children[1].getText()
+            else:
+                del ctx.children[4 if count is 6 else 3]
+                del ctx.children[2]
+            del ctx.children[0]
+            ctx.children[0] = ctx.children[0].getText()
 
     # Holds [<var1>, <var2> ...]
     # TODO double check

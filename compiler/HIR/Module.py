@@ -1,6 +1,7 @@
 from antlr4 import *
 from antlr_yal import *
 from pprint import pprint
+from compiler.HIR.Function import *
 from compiler.HIR.Variable import *
 from compiler.HIR.NumberVariable import *
 from compiler.HIR.ArrayVariable import *
@@ -25,12 +26,12 @@ class Module:
                     i+=1
                     ret = self.__addVariable(var_name, var_info)
                 elif isinstance(child, yalParser.FunctionContext): # A function declaration
-                    print("FUNC")
+                    (func_name, func_info) = self.__parseFunction(child, i)
+                    ret = self.__addFunction(func_name, func_info)
 
                 if ret is not None:
                     print(ret)
                     return False
-
 
 
     # n is in which iteration was this called (used instead of line number and column number)
@@ -48,11 +49,38 @@ class Module:
             return (var_name, NumberVariable(int(number.getText()), n, n))
         elif child_n is 4: # Array declaraction
             size = node.children[2];
-            return (var_name, ArrayVariable(int(size.getText()), n, n))
+            return (var_name, ArrayVariable(int(size), n, n))
+
+    def __parseFunction(self, node: yalParser.FunctionContext, n: int) -> (str, Function):
+        has_ret = isinstance(node.children[1], str)
+        if has_ret:
+            count = node.getChildCount()
+            vars = None
+            stmts = node.children[2]
+            if count is 4:
+                vars = node.children[2]
+                stmts = node.children[3]
+
+            return (node.children[1], Function(node.children[0], vars, stmts));
+        else:
+            count = node.getChildCount()
+            vars = None
+            stmts = node.children[1]
+            if count is 3:
+                vars = node.children[1]
+                stmts = node.children[2]
+            return (node.children[0], Function(None, vars, stmts))
 
     def __addVariable(self, var_name: str, var_info: Variable) -> str:
         if var_name in self.vars:
             return "Variable name '" + var_name + "' already declared!"
 
         self.vars[var_name] = var_info
+        return None
+
+    def __addFunction(self, func_name: str, func_info: Function) -> str:
+        if func_name in self.functions:
+            return "Function name '" + func_name + "' already declared!"
+
+        self.functions[func_name] = func_info
         return None
