@@ -26,17 +26,13 @@ class Function:
 
                 #TODO add hinting
     def __addStmts(self, stmts):
-        for stmt in stmts:
-            for stmtt in stmt.getChildren():
-                print(" STMTM " + str(stmtt));
-
-            print(stmt.__class__.__name__)
-            if isinstance(stmt, yalParser.While_yalContext):
-                print("WHILE");
-            elif isinstance(stmt, yalParser.If_yalContext):
-                print("IF");
-            elif isinstance(stmt, yalParser.AssignContext):
-                print("ASSIGN");
-            elif isinstance(stmt, yalParser.CallContext):
-                print("SD = " + stmt.getChildren[0])
-                breadcrumbs = stmt.split('.')
+        for stmt_node in stmts:
+            for stmt in stmt_node.getChildren():
+                if isinstance(stmt, yalParser.While_yalContext):
+                    print("WHILE");
+                elif isinstance(stmt, yalParser.If_yalContext):
+                    print("IF");
+                elif isinstance(stmt, yalParser.AssignContext):
+                    print("ASSIGN");
+                elif isinstance(stmt, yalParser.CallContext):
+                    print("CALL");
