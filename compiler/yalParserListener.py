@@ -101,8 +101,8 @@ class yalParserListener(yalListener):
     # Holds [<operator> <ASS_OP> <operator>]
     def exitAssign(self, ctx:yalParser.AssignContext):
         if valid(ctx, 4):
-            ctx.children[1] = "="
             del ctx.children[3]
+            del ctx.children[1]
 
 
     # If there is only one child its an array access

@@ -3,7 +3,6 @@ from antlr4 import *
 from antlr_yal import *
 from compiler import *
 
-
 from pprint import pprint
 
 # ParserParser class will have a method for each 'rule' in the parser.

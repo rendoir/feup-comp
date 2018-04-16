@@ -115,16 +115,16 @@ class yalParser ( Parser ):
 
     sharedContextCache = PredictionContextCache()
 
-    literalNames = [ "<INVALID>", "'['", "']'", "'.'", "<INVALID>", "<INVALID>", 
-                     "<INVALID>", "<INVALID>", "'!'", "'while'", "'if'", 
-                     "'else'", "'='", "'\"'", "'('", "')'", "','", "';'", 
+    literalNames = [ "<INVALID>", "'['", "']'", "'.'", "<INVALID>", "<INVALID>",
+                     "<INVALID>", "<INVALID>", "'!'", "'while'", "'if'",
+                     "'else'", "'='", "'\"'", "'('", "')'", "','", "';'",
                      "'{'", "'}'", "'function'", "'module'", "'size'" ]
 
-    symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                      "REL_OP", "ADDSUB_OP", "ART_OP", "BTW_OP", "NOT_OP", 
-                      "WHILE", "IF", "ELSE", "ASS_OP", "ASPA", "LPAR", "RPAR", 
-                      "COMMA", "D_COMMA", "L_BRACKET", "R_BRACKET", "FUNC", 
-                      "MODULE", "SIZE", "ID", "LETTER", "NUMBER", "DIGIT", 
+    symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>",
+                      "REL_OP", "ADDSUB_OP", "ART_OP", "BTW_OP", "NOT_OP",
+                      "WHILE", "IF", "ELSE", "ASS_OP", "ASPA", "LPAR", "RPAR",
+                      "COMMA", "D_COMMA", "L_BRACKET", "R_BRACKET", "FUNC",
+                      "MODULE", "SIZE", "ID", "LETTER", "NUMBER", "DIGIT",
                       "STRING", "SPACES_AND_SUCH", "LINE_COMMENT", "MULTI_COMMENT" ]
 
     RULE_module = 0
@@ -151,10 +151,10 @@ class yalParser ( Parser ):
     RULE_scalar_access = 21
     RULE_index = 22
 
-    ruleNames =  [ "module", "declaration", "function", "var_list", "array_element", 
-                   "scalar_element", "stmt_list", "stmt", "assign", "left_op", 
-                   "right_op", "array_size", "term", "exprtest", "while_yal", 
-                   "if_yal", "else_yal", "call", "arg_list", "arg", "array_access", 
+    ruleNames =  [ "module", "declaration", "function", "var_list", "array_element",
+                   "scalar_element", "stmt_list", "stmt", "assign", "left_op",
+                   "right_op", "array_size", "term", "exprtest", "while_yal",
+                   "if_yal", "else_yal", "call", "arg_list", "arg", "array_access",
                    "scalar_access", "index" ]
 
     EOF = Token.EOF
@@ -1766,8 +1766,3 @@ class yalParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
-
-
-
-
-

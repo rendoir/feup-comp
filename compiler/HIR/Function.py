@@ -1,5 +1,6 @@
 from  antlr_yal import *
 from compiler.HIR.ArrayVariable import ArrayVariable
+from compiler.HIR.Stmt import *
 from compiler.HIR.NumberVariable import NumberVariable
 
 class Function:
@@ -23,8 +24,8 @@ class Function:
                 self.arguments[var[0]] = ArrayVariable(None, 0, 0)
             else:
                 self.arguments[var[0]] = NumberVariable(None, 0, 0)
+            #TODO add hinting
 
-                #TODO add hinting
     def __addStmts(self, stmts):
         for stmt_node in stmts:
             for stmt in stmt_node.getChildren():
@@ -33,6 +34,6 @@ class Function:
                 elif isinstance(stmt, yalParser.If_yalContext):
                     print("IF");
                 elif isinstance(stmt, yalParser.AssignContext):
-                    print("ASSIGN");
+                    Assign(stmt.children[0], stmt.children[1])
                 elif isinstance(stmt, yalParser.CallContext):
-                    print("CALL");
+                    Call(stmt.children[0].split('.'), stmt.children[1])

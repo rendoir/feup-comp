@@ -51,7 +51,6 @@ array_access: ID '[' index ']';
 scalar_access: ID ('.' SIZE)?;
 index: (ID | NUMBER);
 
-
 ID: LETTER (LETTER | DIGIT)*;
 LETTER: [_a-zA-Z];
 NUMBER: [0-9]+;
