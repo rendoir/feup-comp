@@ -98,7 +98,7 @@ class yalParserListener(yalListener):
             del ctx.children[1]
             del ctx.children[2]
 
-    # Holds [<operator> <ASS_OP> <operator>]
+    # Holds [<operator> <operator>]
     def exitAssign(self, ctx:yalParser.AssignContext):
         if valid(ctx, 4):
             del ctx.children[3]

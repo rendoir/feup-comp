@@ -22,7 +22,6 @@ class Module:
                     self.name = child
                 elif isinstance(child, yalParser.DeclarationContext): # A variable declaration
                     (var_name, var_info) = self.__parseDeclaration(child, i)
-                    print("Parsed '" + var_name +"'");
                     i+=1
                     ret = self.__addVariable(var_name, var_info)
                 elif isinstance(child, yalParser.FunctionContext): # A function declaration
