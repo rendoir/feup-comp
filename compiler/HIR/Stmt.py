@@ -1,21 +1,21 @@
-from typing import List
 from antlr4 import *
 from antlr_yal import *
 from pprint import pprint
 
-class Stmt:
-    def __init__(self, node: yalParser.StmtContext):
-        child = node.children[0]
-        if isinstance(child, yalParser.While_yalContext):
-            self.body = While(child)
-        elif isinstance(child, yalParser.If_yalContext):
-            self.body = If(child)
-        elif isinstance(child, yalParser.AssignContext):
-            self.body = Assign(child)
-        elif isinstance(child, yalParser.CallContext):
-            self.body = Call(child.children[0], child.children[1])
-        else:
-            print("Oh damn boie")
+def parseStmt(stmt: yalParser.StmtContext, parent) -> ParserRuleContext:
+    from compiler.HIR.CodeScope import While, If
+    child = stmt.children[0]
+    if isinstance(child, yalParser.While_yalContext):
+        return While(child, parent)
+    elif isinstance(child, yalParser.If_yalContext):
+        return If(child, parent)
+    elif isinstance(child, yalParser.AssignContext):
+        return Assign(child)
+    elif isinstance(child, yalParser.CallContext):
+        return Call(child.children[0], child.children[1])
+    else:
+        print("Oh damn boie")
+        return None
 
 class Call:
     def __init__(self, calls: str, args_node: yalParser.Arg_listContext):
@@ -27,26 +27,6 @@ class ExprTest:
         self.op = node.children[1]
         self.left = LeftOP(node.children[0])
         self.right = RightOP(node.children[2])
-
-class If:
-    def __init__(self, node: yalParser.If_yalContext):
-        self.test = ExprTest(node.children[0])
-        self.body = [];
-        stmts = node.children[1]
-        for stmt in stmts.children:
-            self.body.append(Stmt(stmt))
-        self.else_body = []
-        if node.getChildCount() is 3: # Has else statement
-            for stmt in node.children[2].children:
-                self.else_body.append(Stmt(stmt))
-
-class While:
-    def __init__(self, node: yalParser.While_yalContext):
-        self.test = ExprTest(node.children[0])
-        self.body = [];
-        stmts = node.children[1]
-        for stmt in stmts.children:
-            self.body.append(Stmt(stmt))
 
 class LeftOP:
     def __init__(self, node: yalParser.Left_opContext):
