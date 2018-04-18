@@ -31,10 +31,14 @@ The parser code is in the .g4 file.
  - :x: Check if variable has already been declared.
  - :x: Check if variable has been initialized when it is being used.
  - :x: Check if the variable type is correct.
+   - Variable type defaults to scalar, unless variable previously declared as array
  - :x: Cannot reassign array size
 
         var.size = 20; //Error
 
  - :x: Comparison between arrays is not possible
  - :x: Branching declaration (variables declared/initialized within if/else must be checked)
- - :x: Variable type defaults to scalar
+ 
+ ### Code Generation
+ - :x: Code for function calls
+ - :x: Code for arithmetic expressions
