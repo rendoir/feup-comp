@@ -25,7 +25,8 @@ class Function(Scope):
         children = args.getChildren()
         for child in children:
             var = child.split('[]')
-            if len(var) is 2:
+            print("VAR = " + str(var))
+            if len(var) == 2:
                 self.vars[0][var[0]] = ArrayVariable(var[0], None, 0, 0)
             else:
                 self.vars[0][var[0]] = NumberVariable(var[0], None, 0, 0)
@@ -34,6 +35,14 @@ class Function(Scope):
     def __addStmts(self, stmts):
         for stmt in stmts:
             self.code.append(parseStmt(stmt, self))
+
+    def __str__(self):
+        string = "("
+        for name, arg in self.vars[0].items():
+            pprint(arg)
+            string += str(arg) + " "
+        string += ")\n"
+        return string
 
 class If(Scope):
     def __init__(self, node: yalParser.If_yalContext, parent: Scope):
@@ -66,21 +75,20 @@ class Module(Scope):
         self.name = None
 
     def parseTree(self, tree: ParserRuleContext) -> str:
-        print("YELLOW")
         children = tree.getChildren()
         i = 0
         for child in children:
             if child is not None:
                 ret = None
-                if isinstance(child, str):
-                    self.name = child
-                elif isinstance(child, yalParser.DeclarationContext):
+                if isinstance(child, yalParser.DeclarationContext):
                     (name, info) = self.__parseDeclaration(child, i)
                     i+=1
                     ret = self.__addVariable(name, info)
                 elif isinstance(child, yalParser.FunctionContext):
                     (name, info) = self.__parseFunction(child, i)
                     ret = self.__addFunction(name, info)
+                else:
+                    self.name = str(child);
 
                 if ret is not None:
                     return ret
@@ -136,3 +144,16 @@ class Module(Scope):
 
         self.code[func_name] = func_info
         return None
+
+
+    def __str__(self):
+        string = "Module '" + self.name + "':\n"
+        string += " Members:\n"
+        for name, var in self.vars.items():
+            string += "  " + str(var) + "\n"
+
+        string += " Functions:\n"
+        for name, func in self.code.items():
+            string += "  " + name + str(func)
+
+        return string
