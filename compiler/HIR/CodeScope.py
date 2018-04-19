@@ -2,11 +2,25 @@ from compiler.HIR.Variable import *
 from compiler.HIR.Stmt import *
 from antlr_yal import *
 
+def checkVar(var_name: str, is_array: bool, defined_vars) -> str:
+    for vars in defined_vars:
+        if var_name in vars:
+            also_array = isinstance(vars[var_name], ArrayVariable)
+            if is_array != also_array:
+                return "Variable '" + var_name + "' defined, but tried using as different type"
+            else:
+                return None
+
+    return "Variable '" + var_name + "' is not defined!"
+
 class Scope:
     def __init__(self, parent):
         self.vars = {}
         self.code = []
         self.parent_scope = parent
+
+    def addVar(self, name: str, var: Variable):
+        raise NotImplementedError( "Should have implemented this" )
 
 
 class Function(Scope):
@@ -20,6 +34,7 @@ class Function(Scope):
 
         if stmts is not None:
             self.__addStmts(stmts.children)
+
 
     def __addArgs(self, args: yalParser.Arg_listContext):
         children = args.getChildren()
@@ -44,10 +59,60 @@ class Function(Scope):
         string += ")\n"
         return string
 
+    def checkVariables(self):
+        for line in self.code:
+            if isinstance(line, yalParser.While_yalContext) or isinstance(line, yalParser.If_yalContext):
+                vars = []
+                vars.insert(0, self.vars[0])
+                vars.insert(0, self.vars[1])
+                line.checkVariables(vars)
+            elif isinstance(line, Stmt.Assign):
+                (name, is_array) = line.getVarInfo()
+                # Check if variable type is same as assignment
+
+                if name not in self.vars[0]: # Variable is not an argument
+                    if name not in self.vars[1]:
+                        if is_array:
+                            self.vars[1][name] = ArrayVariable(name, None, 1, 1)
+                        else:
+                            #TODO check if it has a '.size'
+                            self.vars[1][name] = NumberVariable(name, None, 1, 1)
+                    else:
+                        print("Variable '" + name + "' reaassigned!")
+            elif isinstance(line, Stmt.Call):
+                func_name = line.calls[0]
+                mod_call = len(line.calls) is 2
+
+                if not mod_call:
+                    if func_name not in parent.code:
+                        return "Function '" + func_name + "' not defined!"
+
+
+                for arg in line.args:
+                    vars_list = []
+                    vars_list.insert(0, self.parent.vars)
+                    vars_list.insert(0, self.vars[0])
+                    vars_list.insert(0, self.vars[1])
+                    exists = false
+                    for vars in vars_list:
+                        exists = exists or (arg in vars)
+                        if arg in vars:
+                            if not vars[arg].initialized():
+                                return "Variable '" + arg + "' used before initialization!"
+
+        return None
+
+
+
+
+
+
+
 class If(Scope):
     def __init__(self, node: yalParser.If_yalContext, parent: Scope):
         self.parent_scope = parent
         self.test = ExprTest(node.children[0])
+        self.vars = dict()
         self.code = []
         stmts = node.children[1]
         for stmt in stmts.children:
@@ -63,6 +128,7 @@ class While(Scope):
         self.parent_scope = parent
         self.test = ExprTest(node.children[0])
         self.body = []
+        self.vars = dict()
         for stmt in node.children[1].children:
             self.body.append(parseStmt(stmt, self))
 
@@ -76,16 +142,14 @@ class Module(Scope):
 
     def parseTree(self, tree: ParserRuleContext) -> str:
         children = tree.getChildren()
-        i = 0
         for child in children:
             if child is not None:
                 ret = None
                 if isinstance(child, yalParser.DeclarationContext):
-                    (name, info) = self.__parseDeclaration(child, i)
-                    i+=1
+                    (name, info) = self.__parseDeclaration(child)
                     ret = self.__addVariable(name, info)
                 elif isinstance(child, yalParser.FunctionContext):
-                    (name, info) = self.__parseFunction(child, i)
+                    (name, info) = self.__parseFunction(child)
                     ret = self.__addFunction(name, info)
                 else:
                     self.name = str(child);
@@ -93,24 +157,23 @@ class Module(Scope):
                 if ret is not None:
                     return ret
 
-    # n is in which iteration was this called (used instead of line number and columnnumber)
     # Returns tuple with (<var_name>, <variable_instance>)
     # Need to check if var_name already exists!
-    def __parseDeclaration(self, node: yalParser.DeclarationContext, n: int) -> (str,Variable):
+    def __parseDeclaration(self, node: yalParser.DeclarationContext) -> (str,Variable):
         if node is None:
             return;
         child_n = node.getChildCount()
         var_name = node.children[0]
 
         if child_n is 1: # Only variable name
-            return (var_name, NumberVariable(var_name, None, n, None))
+            return (var_name, NumberVariable(var_name, None, 0, None))
         elif child_n is 2: # Constant declaration?
-            return (var_name, NumberVariable(var_name, int(number.getText()), n, n))
+            return (var_name, NumberVariable(var_name, int(number.getText()), 0, 0))
         elif child_n is 4: # Array declaraction
             size = node.children[2];
-            return (var_name, ArrayVariable(var_name, int(size), n, n))
+            return (var_name, ArrayVariable(var_name, int(size), 0, 0))
 
-    def __parseFunction(self, node: yalParser.FunctionContext, n: int) -> (str, Function):
+    def __parseFunction(self, node: yalParser.FunctionContext) -> (str, Function):
         has_ret = isinstance(node.children[1], str)
         if has_ret:
             count = node.getChildCount()
@@ -144,6 +207,12 @@ class Module(Scope):
 
         self.code[func_name] = func_info
         return None
+
+
+    def semanticCheck(self) -> str:
+        for name, func in self.code.items():
+            func.checkVariables()
+
 
 
     def __str__(self):

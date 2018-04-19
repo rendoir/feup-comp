@@ -1,6 +1,7 @@
 from antlr4 import *
 from antlr_yal import *
 from pprint import pprint
+from compiler.HIR.Variable import *
 
 def parseStmt(stmt: yalParser.StmtContext, parent) -> ParserRuleContext:
     from compiler.HIR.CodeScope import While, If
@@ -20,7 +21,13 @@ def parseStmt(stmt: yalParser.StmtContext, parent) -> ParserRuleContext:
 class Call:
     def __init__(self, calls: str, args_node: yalParser.Arg_listContext):
         self.calls = calls.split('.')
-        self.args = args_node.children
+        self.args = {}
+        for arg in args_node.children:
+            var = str(arg).split('[]')
+            if len(var) is 2:
+                self.args[var[0]] = ArrayVariable(var[0], None, None, None)
+            else:
+                self.args[var[0]] = NumberVariable(var[0], None, None, None)
 
 class ExprTest:
     def __init__(self, node: yalParser.ExprtestContext):
@@ -57,6 +64,10 @@ class Assign:
     def __init__(self, node: yalParser.AssignContext):
         self.left = LeftOP(node.children[0])
         self.right = RightOP(node.children[1])
+
+    def getVarInfo(self) -> (str, bool):
+        is_array = isinstance(self.left, ArraySize)
+        return (self.left.var, is_array)
 
 class ArrayAccess:
     def __init__(self, node: yalParser.Array_accessContext):

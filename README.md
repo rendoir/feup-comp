@@ -24,7 +24,7 @@ The parser code is in the .g4 file.
 
 ### Symbol Table
 
- - :x: Storing function variables in the same place.
+ - :whit_check_mark: Storing function variables in the same place.
 
 ### Semantic Analysis
 
@@ -37,8 +37,14 @@ The parser code is in the .g4 file.
         var.size = 20; //Error
 
  - :x: Comparison between arrays is not possible
+ - :x: Check if type of arguments passed on function call is valid
  - :x: Branching declaration (variables declared/initialized within if/else must be checked)
- 
+
  ### Code Generation
  - :x: Code for function calls
  - :x: Code for arithmetic expressions
+
+
+## Questions
+
+ - If there are no import statements are we supposed to assume that every call that does not correspond to a function call is a separate module?
