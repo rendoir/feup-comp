@@ -48,3 +48,4 @@ The parser code is in the .g4 file.
 ## Questions
 
  - If there are no import statements are we supposed to assume that every call that does not correspond to a function call is a separate module?
+ - Should the function not exists do we check the existence of the parameters?

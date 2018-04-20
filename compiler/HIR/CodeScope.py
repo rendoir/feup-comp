@@ -22,11 +22,12 @@ class Scope:
     def addVar(self, name: str, var: Variable):
         raise NotImplementedError( "Should have implemented this" )
 
+# 20 maças, cortar laminadas ++ fino, marshmallows 1 por cada pessoa (+- 100), espeto para por marshmallows (dar para pelos menos 15),
 
 class Function(Scope):
     def __init__(self, ret_var: str, args: yalParser.Arg_listContext, stmts: yalParser.Stmt_listContext, parent: Scope):
         self.ret_var = ret_var
-        self.vars = [dict(), dict()]
+        self.vars = [[], dict()] #[<arguments>, <local_variables>]
         self.code = []
         self.parent_scope = parent
         if args is not None:
@@ -40,11 +41,10 @@ class Function(Scope):
         children = args.getChildren()
         for child in children:
             var = child.split('[]')
-            print("VAR = " + str(var))
             if len(var) == 2:
-                self.vars[0][var[0]] = ArrayVariable(var[0], None, 0, 0)
+                self.vars[0].append(ArrayVariable(var[0], None, 0, 0))
             else:
-                self.vars[0][var[0]] = NumberVariable(var[0], None, 0, 0)
+                self.vars[0].append(NumberVariable(var[0], None, 0, 0))
             #TODO add hinting
 
     def __addStmts(self, stmts):
@@ -66,9 +66,9 @@ class Function(Scope):
                 vars.insert(0, self.vars[0])
                 vars.insert(0, self.vars[1])
                 line.checkVariables(vars)
-            elif isinstance(line, Stmt.Assign):
+            elif isinstance(line, Assign):
                 (name, is_array) = line.getVarInfo()
-                # Check if variable type is same as assignment
+                #TODO  Check if variable type is same as assignment
 
                 if name not in self.vars[0]: # Variable is not an argument
                     if name not in self.vars[1]:
@@ -79,30 +79,68 @@ class Function(Scope):
                             self.vars[1][name] = NumberVariable(name, None, 1, 1)
                     else:
                         print("Variable '" + name + "' reaassigned!")
-            elif isinstance(line, Stmt.Call):
-                func_name = line.calls[0]
-                mod_call = len(line.calls) is 2
-
-                if not mod_call:
-                    if func_name not in parent.code:
-                        return "Function '" + func_name + "' not defined!"
-
-
-                for arg in line.args:
-                    vars_list = []
-                    vars_list.insert(0, self.parent.vars)
-                    vars_list.insert(0, self.vars[0])
-                    vars_list.insert(0, self.vars[1])
-                    exists = false
-                    for vars in vars_list:
-                        exists = exists or (arg in vars)
-                        if arg in vars:
-                            if not vars[arg].initialized():
-                                return "Variable '" + arg + "' used before initialization!"
+            elif isinstance(line, Call):
+                var_list = [self.vars[1], self.vars[0], self.parent_scope.vars]
+                return self.__checkCallSemantic(line, var_list)
 
         return None
 
 
+    def __checkCallSemantic(self, line: Call, var_list) -> str:
+        func_name = line.calls[0]
+        func_called = None
+        mod_call = len(line.calls) is 2
+
+        # Check if function exists
+        if not mod_call:
+            if func_name not in self.parent_scope.code:
+                return "Function '" + func_name + "' not defined!"
+            else:
+                func_called = self.parent_scope.code[func_name]
+
+        call_vars = []
+        #Check if arguments exists
+        for arg_name in line.args:
+            exists = False
+            for vars in var_list:
+                exists = exists or (arg_name in vars)
+                if arg_name in vars:
+                    # if not vars[arg_name].initialized():
+                    #     return "Variable '" + arg_name + "' used before initialization!"
+                    call_vars.append(vars[arg_name])
+
+            if not exists:
+                return "Variable '" + arg_name + "' not defined!"
+
+
+        #Check correct type of parameters
+        func_args = func_called.vars[0]
+        wrong = False
+
+        if len(call_vars) is len(func_called.vars[0]):
+            for i in range(len(call_vars)):
+                if call_vars[i].type != func_called.vars[0][i].type:
+                    wrong = True
+        else:
+            wrong = True
+
+        if wrong:
+            ret = "Expected " + func_name + "("
+            remove = False
+            for var in func_called.vars[0]:
+                remove = True
+                ret += var.type + ", "
+            if remove:
+                ret = ret[:-2]
+            ret += "), got " + func_name + "("
+
+            for var in call_vars:
+                ret += var.type + ", "
+            ret = ret[:-2]
+            ret += ")"
+            return ret
+
+        return None
 
 
 
@@ -209,10 +247,18 @@ class Module(Scope):
         return None
 
 
-    def semanticCheck(self) -> str:
+    def semanticCheck(self):
+        print("--- Semantic Check ---")
+        err_n = 0
         for name, func in self.code.items():
-            func.checkVariables()
+            ret = func.checkVariables()
+            if ret is not None:
+                err_n += 1
+                print(ret)
 
+        if err_n > 0:
+            print(str(err_n) + " semantic errors!")
+        print("--- End Semantic Check ---")
 
 
     def __str__(self):

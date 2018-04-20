@@ -14,7 +14,7 @@ module program1 {
   }
 
   function main() {
-    det(data);
+    det(mx, mn, data);
     io.println("max: ", mx);
     io.println("min: ", mn);
   }

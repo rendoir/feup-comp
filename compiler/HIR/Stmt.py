@@ -21,14 +21,9 @@ def parseStmt(stmt: yalParser.StmtContext, parent) -> ParserRuleContext:
 class Call:
     def __init__(self, calls: str, args_node: yalParser.Arg_listContext):
         self.calls = calls.split('.')
-        self.args = {}
+        self.args = []
         for arg in args_node.children:
-            var = str(arg).split('[]')
-            if len(var) is 2:
-                self.args[var[0]] = ArrayVariable(var[0], None, None, None)
-            else:
-                self.args[var[0]] = NumberVariable(var[0], None, None, None)
-
+            self.args.append(str(arg))
 class ExprTest:
     def __init__(self, node: yalParser.ExprtestContext):
         self.op = node.children[1]
@@ -39,9 +34,9 @@ class LeftOP:
     def __init__(self, node: yalParser.Left_opContext):
         child = node.children[0]
         if (isinstance(child, yalParser.Array_accessContext)):
-            self.operator = ArrayAccess(child)
+            self.var = ArrayAccess(child)
         elif (isinstance(child, yalParser.Scalar_accessContext)):
-            self.operator = ScalarAccess(child)
+            self.var = ScalarAccess(child)
         else:
             print("WUUUUUUUUUUUTTTTTT??????!!!!!!!");
 

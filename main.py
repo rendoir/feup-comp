@@ -24,7 +24,8 @@ def main(argv):
 
     module = Module()
     module.parseTree(tree)
-    print(module)
+    module.semanticCheck()
+    # print(module)
     # printTree(tree, 0, recog=parser)
 
 if __name__ == '__main__':
