@@ -2,6 +2,8 @@ from compiler.HIR.Variable import *
 from compiler.HIR.Stmt import *
 from antlr_yal import *
 
+from pprint import pprint
+
 def checkVar(var_name: str, is_array: bool, defined_vars) -> str:
     for vars in defined_vars:
         if var_name in vars:
@@ -60,28 +62,19 @@ class Function(Scope):
         return string
 
     def checkVariables(self):
-        for line in self.code:
-            if isinstance(line, yalParser.While_yalContext) or isinstance(line, yalParser.If_yalContext):
-                vars = []
-                vars.insert(0, self.vars[0])
-                vars.insert(0, self.vars[1])
-                line.checkVariables(vars)
-            elif isinstance(line, Assign):
-                (name, is_array) = line.getVarInfo()
-                #TODO  Check if variable type is same as assignment
+        for code_chunk in self.code:
+            var_list = [self.vars[1], self.vars[0], self.parent_scope.vars]
+            ret = None
 
-                if name not in self.vars[0]: # Variable is not an argument
-                    if name not in self.vars[1]:
-                        if is_array:
-                            self.vars[1][name] = ArrayVariable(name, None, 1, 1)
-                        else:
-                            #TODO check if it has a '.size'
-                            self.vars[1][name] = NumberVariable(name, None, 1, 1)
-                    else:
-                        print("Variable '" + name + "' reaassigned!")
-            elif isinstance(line, Call):
-                var_list = [self.vars[1], self.vars[0], self.parent_scope.vars]
-                return self.__checkCallSemantic(line, var_list)
+            if isinstance(code_chunk, yalParser.While_yalContext) or isinstance(code_chunk, yalParser.If_yalContext):
+                ret = code_chunk.checkVariables(var_list)
+            elif isinstance(code_chunk, Assign):
+                ret = self.__checkAssign(code_chunk, var_list)
+            elif isinstance(code_chunk, Call):
+                ret = self.__checkCallSemantic(code_chunk, var_list)
+
+            if ret is not None:
+                print(ret)
 
         return None
 
@@ -105,12 +98,13 @@ class Function(Scope):
             for vars in var_list:
                 exists = exists or (arg_name in vars)
                 if arg_name in vars:
-                    # if not vars[arg_name].initialized():
-                    #     return "Variable '" + arg_name + "' used before initialization!"
+                    if not vars[arg_name].initialized():
+                        return "Variable '" + arg_name + "' used before initialization!"
                     call_vars.append(vars[arg_name])
 
             if not exists:
-                return "Variable '" + arg_name + "' not defined!"
+                if not Variable.isLiteral(arg_name):
+                    return "Variable '" + arg_name + "' not defined!"
 
 
         #Check correct type of parameters
@@ -142,8 +136,29 @@ class Function(Scope):
 
         return None
 
+    def __checkAssign(self, assign: Assign, var_lists) -> str:
+        (var_name, var_info) = assign.getVarInfo()
+        exists = False;
+        indexing = var_info.indexAccess();
 
 
+        for var_list in var_lists:
+            if var_name in var_list: #Check var type matches
+                exists = True
+                var = var_list[var_name]
+                assign_type = assign.right.resultType()
+                if assign_type != var.type:
+                    return "Assigned wrong type to variable '{}'\n  Expected '{}', got '{}'".format(var_name, var.type, assign_type)
+
+        if not exists:
+            var_obj = None
+            is_array = assign.isAssignArray()
+            print("Adding var '{}', is_arr '{}'".format(var_name, is_array))
+            if is_array:
+                var_obj = ArrayVariable(var_name, 0, 0, 0)
+            else:
+                var_obj = NumberVariable(var_name, 0, 0, 0)
+            self.vars[1][var_name] = var_obj
 
 
 class If(Scope):

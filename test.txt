@@ -3,18 +3,21 @@ module program1 {
   mx;         // attribute mx
   mn;         // attribute mn
 
-  function det(d[], A[], b) {
-   i = + 2;
-   M = d.size - 1; //d.size is the same as d.length (Java)
-   while (i < M) { // version not optimized
-     a = d[i]; i=i+1; b=d[i];
-     mx = library1.max(a, b);
-     mn = library1.min(a, b);
+   function det(d[], A[], b) {
+    i = + 2;
+    M = d.size - 1; //d.size is the same as d.length (Java)
+    while (i < M) { // version not optimized
+      a = d[i]; i=i+1; b=d[i];
+      mx = library1.max(a, b);
+      mn = library1.min(a, b);
+    }
    }
-  }
 
   function main() {
-    det(mx, mn, data);
+    vars = [2];
+    varss = 1;
+    varsss = 2;
+    det(vars, varss, varsss);
     io.println("max: ", mx);
     io.println("min: ", mn);
   }

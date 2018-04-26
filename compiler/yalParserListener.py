@@ -105,13 +105,14 @@ class yalParserListener(yalListener):
             del ctx.children[1]
 
 
-    # If there is only one child its an array access
-    # TODO check if it is needed to process left option
-    def exitRight_op(self, ctx:yalParser.Right_opContext):
-        arr_size = ctx.getToken(yalParser.RULE_array_size, 0);
-        if arr_size != None:
-            eraseChilds(ctx)
-            ctx.addChild(arr_size)
+    # # If there is only one child its an array access
+    # # TODO check if it is needed to process left option
+    # def exitRight_op(self, ctx:yalParser.Right_opContext):
+    #     print("RIGHT OP")
+    #     print(str(ctx.children))
+    #     if isinstance(ctx.children[0], tree.Tree.TerminalNodeImpl): # Is '[' <arr_size> ']'
+    #         eraseChilds(ctx)
+    #         ctx.addChild(str(ctx.children[1]))
 
     # Holds [<ID> <index_access>]
     def exitArray_access(self, ctx:yalParser.Array_accessContext):

@@ -15,6 +15,19 @@ class Variable:
     def initialized(self):
         return self.line_init is not None
 
+    def isLiteral(var: str) -> bool:
+        if not isinstance(var, str):
+            print("Var type = ", end='')
+            pprint(var)
+            return True;
+
+        if var[0] == '"' and var[-1] == '"':
+            return True;
+        if var[0].isdigit():
+            return True;
+
+        return False
+
 class NumberVariable (Variable):
     def __init__(self, name: str, value: int, decl: int, init: int):
         super(NumberVariable, self).__init__(name, "NUM", decl, init)
@@ -27,7 +40,6 @@ class NumberVariable (Variable):
     def setInit(self, init: int):
         if self.init is None:
             self.init = init
-
 
 class ArrayVariable(Variable):
     def __init__(self, name: str, size: list, decl: int, init: int):
