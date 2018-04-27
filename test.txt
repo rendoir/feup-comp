@@ -3,7 +3,7 @@ module program1 {
   mx;         // attribute mx
   mn;         // attribute mn
 
-   function det(d[], A[], b) {
+   function a[]=det(d[], A[], b) {
     i = + 2;
     M = d.size - 1; //d.size is the same as d.length (Java)
     while (i < M) { // version not optimized
@@ -15,9 +15,9 @@ module program1 {
 
   function main() {
     vars = [2];
-    varss = 1;
+    varss = [1];
     varsss = 2;
-    det(vars, varss, varsss);
+    det(vars, varss, var);
     io.println("max: ", mx);
     io.println("min: ", mn);
   }

@@ -26,12 +26,22 @@ def eraseChilds(ctx:ParserRuleContext):
 def valid(ctx, min_childs):
     return ctx.children is not None and ctx.getChildCount() >= min_childs and ctx.exception is None
 
+def varToString(node) -> str:
+    if isinstance(node, tree.Tree.TerminalNodeImpl):
+        ret = str(node)
+    else:
+        ret = str(node.children[0])
+
+    if isinstance(node, yalParser.Array_elementContext):
+        return ret + '[]'
+
+    return ret
+
 # TODO erase '[' ']' and replace by string
 class yalParserListener(yalListener):
 
     # Holds [<name>, <declarations>*, <functions>*]
     def exitModule(self, ctx:yalParser.ModuleContext):
-        print(valid(ctx, 4))
         if valid(ctx, 4):
             del ctx.children[0]
             del ctx.children[1]
@@ -61,21 +71,25 @@ class yalParserListener(yalListener):
     # Note: If there are no var_list, the node is None
     def exitFunction(self, ctx:yalParser.FunctionContext):
         if ctx.children is not None:
-            count = ctx.getChildCount()
-            del ctx.children[count - 1]
-            del ctx.children[count - 3]
-            count = count - 2
+            del ctx.children[-1]
+            del ctx.children[-2]
+            del ctx.children[-2]
 
-            if ctx.children[2].getText() is '=':
-                del ctx.children[6 if count is 7 else 5]
-                del ctx.children[4]
-                del ctx.children[2]
-                ctx.children[1] = ctx.children[1].getText()
+            # Delete left parenthesis
+            if isinstance(ctx.children[-2], tree.Tree.TerminalNodeImpl):
+                del ctx.children[-2]
             else:
-                del ctx.children[4 if count is 6 else 3]
+                del ctx.children[-3]
+
+
+            if str(ctx.children[2]) is '=':
                 del ctx.children[2]
+                ctx.children[2] = varToString(ctx.children[2])
+
             del ctx.children[0]
-            ctx.children[0] = ctx.children[0].getText()
+            ctx.children[0] = varToString(ctx.children[0])
+
+
 
     # Holds [<var1>, <var2> ...]
     # TODO double check
@@ -103,16 +117,6 @@ class yalParserListener(yalListener):
         if valid(ctx, 4):
             del ctx.children[3]
             del ctx.children[1]
-
-
-    # # If there is only one child its an array access
-    # # TODO check if it is needed to process left option
-    # def exitRight_op(self, ctx:yalParser.Right_opContext):
-    #     print("RIGHT OP")
-    #     print(str(ctx.children))
-    #     if isinstance(ctx.children[0], tree.Tree.TerminalNodeImpl): # Is '[' <arr_size> ']'
-    #         eraseChilds(ctx)
-    #         ctx.addChild(str(ctx.children[1]))
 
     # Holds [<ID> <index_access>]
     def exitArray_access(self, ctx:yalParser.Array_accessContext):

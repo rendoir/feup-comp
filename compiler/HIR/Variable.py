@@ -15,10 +15,15 @@ class Variable:
     def initialized(self):
         return self.line_init is not None
 
+    def __ne__(self, other) -> bool:
+        if __debug__:
+            assert isinstance(other, Variable), "Variable.__ne__() 'other' should be 'Variable'"
+
+        return (self.type != other.type and (self.type != "???" and other.type != "???"))
+
+
     def isLiteral(var: str) -> bool:
         if not isinstance(var, str):
-            print("Var type = ", end='')
-            pprint(var)
             return True;
 
         if var[0] == '"' and var[-1] == '"':
@@ -34,7 +39,6 @@ class NumberVariable (Variable):
         self.value = value
 
     def __str__(self):
-        print("NUM VAR\n")
         return self.name;
 
     def setInit(self, init: int):
@@ -51,3 +55,7 @@ class ArrayVariable(Variable):
 
     def setInit(self, value: int, init: int):
         print("How was this called!?")
+
+class UndefinedVariable(Variable):
+    def __init__(self, name=None, size=None, decl=None, init=None):
+        super(UndefinedVariable, self).__init__(None, "???", None, None)

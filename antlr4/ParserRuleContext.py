@@ -176,6 +176,18 @@ class ParserRuleContext(RuleContext):
         else:
             return (self.start.tokenIndex, self.stop.tokenIndex)
 
+    def getStartLineCol(self):
+        if self.start is None:
+            return None
+        else:
+            return (self.start.line, self.start.col)
+
+    def getEndLineCol(self):
+        if self.end is None:
+            return None
+        else:
+            return (self.end.line, self.end.col)
+
 
 RuleContext.EMPTY = ParserRuleContext()
 

@@ -9,24 +9,23 @@ from pprint import pprint
 # So since the parser has rules such as 'vector', 'expression' and 'pyClass'
 # It generates a method to parse each one of these
 def main(argv):
-    input = FileStream(argv[1])                         # Open the specified file for input
-    lexer = yalLexer(input)                             # Create a lexer parser
-    stream = CommonTokenStream(lexer)                   # No clue what this is
-    parser = yalRealParser(stream)                          # The actual parser
+    input = FileStream(argv[1])
+    printer = Printer.ErrorPrinter(input)
+    lexer = yalLexer(input)
+    stream = CommonTokenStream(lexer)
+    parser = yalRealParser(stream)
     parser.addErrorListener(yalErrorListener())
-    parser._errHandler = yalErrorStrategy()
     parser.addParseListener(yalParserListener())
-    tree = parser.module()                              # Start the parser (error handling should be before this)
+    tree = parser.module()
 
     if parser.getNumberOfSyntaxErrors() > 0:
         print(" -> " + RED + str(parser.getNumberOfSyntaxErrors()) + RESET + " Syntax errors detected!")
         return
 
+
     module = Module()
     module.parseTree(tree)
-    module.semanticCheck()
-    # print(module)
-    # printTree(tree, 0, recog=parser)
+    module.semanticCheck(printer)
 
 if __name__ == '__main__':
     main(sys.argv)
