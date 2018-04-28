@@ -39,7 +39,7 @@ class yalParserListener(yalListener):
         if valid(ctx, 2):
             del ctx.children[-1] # D_COMMA
 
-            if len(ctx.children) > 3:
+            if len(ctx.children) >= 3:
                 if str(ctx.children[2]) is '[':
                     del ctx.children[4]
                     del ctx.children[2]
@@ -48,7 +48,6 @@ class yalParserListener(yalListener):
                     del ctx.children[2]
 
                 del ctx.children[1]
-
 
     # Holds [<var_name>, <func_name>, <var_list>?, <stmt_list>]
     # OR

@@ -29,20 +29,20 @@ class ErrorPrinter:
 
         error_message = ""
 
-        err_txt = self.lines[line-1][col[0]:col[1]+1]
+        err_txt = self.lines[line-1]
 
-        error_message += "\n" + BOLD + simple_msg + RESET + " -> " + UNDERLINE + "(" + str(line-1) + ":" + str(col[0]) + ")\n" + RESET
+        error_message += "\n" + BOLD + simple_msg + RESET + " -> " + UNDERLINE + "(" + str(line) + ":" + str(col[0]) + ")\n" + RESET
         error_message += " " + err_txt + "\n"
 
-        print("COL[0] = " + str(col[0]) + ", COL[1] = " + str(col[1]) + ", len = " + str(len(err_txt)))
+        print("LINE = " + str(line) + ", COL[0] = " + str(col[0]) + ", COL[1] = " + str(col[1]) + ", len = " + str(len(err_txt)))
 
         for i in range(-1, len(err_txt)):
-            if (i >= col[0] and i < (col[1]-col[0])):
+            if (i >= col[0] and i <= col[1]):
                 error_message += RED + "^"
             else:
                 error_message += " "
 
-        error_message += RESET + "\n - " + detail_msg + "\n" + RESET
+        error_message += RESET + "\n - " + detail_msg + RESET
 
         self.errors.append(error_message)
 

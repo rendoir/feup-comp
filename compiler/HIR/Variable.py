@@ -53,7 +53,7 @@ class ArrayVariable(Variable):
     def __str__(self):
         return self.name + "[]"
 
-    def validAccess(access) -> bool:
+    def validAccess(self, access) -> bool:
         if __debug__:
             assert isinstance(access, int), "ArrayVariable.validAccess() 'access'\n - Expected 'int'\n - Got: " + str(type(access))
 

@@ -30,7 +30,7 @@ The parser code is in the .g4 file.
 
  - :x: Check if variable has already been declared.
  - :x: Check if variable has been initialized when it is being used.
- - :x: Check if the variable type is correct.
+ - :white_check_mark: Check if the variable type is correct.
    - Variable type defaults to scalar, unless variable previously declared as array
  - :x: Cannot reassign array size
 

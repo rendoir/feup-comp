@@ -5,22 +5,6 @@ from antlr_yal import *
 from typing import List
 from pprint import pprint
 
-def checkVar(var_name, is_array, defined_vars) -> str:
-    if __debug__:
-        assert isinstance(var_name, str), "CodeSCope.checkVar() 'var_name'\n - Expected: 'str'\n - Got:" + str(type(var_name))
-        assert isinstance(is_array, bool), "CodeScope.checkVar() 'is_array'\n - Expected: 'bool'\n - Got:" + str(type(is_array))
-        assert isinstance(defined_vars, list), "CodeSCope.checkVar() 'defined_vars'\n - Expected: 'list'\n - Got:" + str(type(defined_vars))
-
-    for vars in defined_vars:
-        if var_name in vars:
-            also_array = isinstance(vars[var_name], ArrayVariable)
-            if is_array != also_array:
-                return "Variable '" + var_name + "' defined, but tried using as different type"
-            else:
-                return None
-
-    return "Variable '" + var_name + "' is not defined!"
-
 class Scope:
     def __init__(self, parent):
         if __debug__:
@@ -248,7 +232,7 @@ class Module(Scope):
         self.name = None
 
     def getVars(self) -> list:
-        return [self.vars]
+        return self.vars
 
     def parseTree(self, tree, printer) -> str:
         if __debug__:
@@ -260,9 +244,8 @@ class Module(Scope):
             if child is not None:
                 ret = None
                 if isinstance(child, yalParser.DeclarationContext):
-                    (name, info) = self.__parseDeclaration(child)
-                    if not self.__addVariable(name, info):
-                        self.__addVarError(child, printer)
+                    (name, info) = self.__parseDeclaration(child, printer)
+                    self.__addVariable(name, info)
                 elif isinstance(child, yalParser.FunctionContext):
                     (name, info) = self.__parseFunction(child)
                     if not self.__addFunction(name, info):
@@ -276,7 +259,8 @@ class Module(Scope):
 
     # Returns tuple with (<var_name>, <variable_instance>)
     # Need to check if var_name already exists!
-    def __parseDeclaration(self, node) -> (str,Variable):
+    def __parseDeclaration(self, node, printer) -> (str,Variable):
+        from .Stmt import ScalarAccess
         if __debug__:
             assert isinstance(node, yalParser.DeclarationContext), "Module.__parseDeclaration() 'node'\n - Expected: 'yalParser.DeclarationContext'\n - Got: " + str(type(node))
 
@@ -286,15 +270,37 @@ class Module(Scope):
 
         # TODO check what happens when node.children[0] is a array_element
         var_name = str(node.children[0].children[0])
-
         if only_name: # Only variable name
-            return (var_name, NumberVariable(var_name, None, 0, 0))
-        elif isinstance(node.children[1], int): # Constant declaration?
-            return (var_name, NumberVariable(var_name, node.children[1], 0, 0))
+            return (var_name, NumberVariable(var_name, None, node.getLine(), node.getColRange()[0]))
+        elif str(node.children[1]).isdigit(): # Constant declaration?
+            if var_name in self.vars:
+                var = self.vars[var_name]
+                if not isinstance(var, NumberVariable):
+                    printer.addError(node.getLine(), node.getColRange(), "Wrong assignment", "Assigned 'NUM' to '" + var.type + "' variable")
+            return (var_name, NumberVariable(var_name, int(str(node.children[1])), node.getLine(), node.getColRange()[0]))
         else:
-            # If node.children[1] is a scalar access check if it is valid
-            # TODO whats up here
-            return (var_name, ArrayVariable(var_name, 0, 0, 0))
+            size_access = node.children[1].children[0]
+
+            if not isinstance(size_access, yalParser.Scalar_accessContext):
+                return (var_name, ArrayVariable(var_name, int(str(size_access)), node.getLine(), node.getColRange()[0]))
+
+            else:
+                size_access = ScalarAccess(size_access, self)
+                size = 0
+                if size_access.var in self.vars:
+                    var = self.vars[size_access.var]
+                    if not isinstance(var, NumberVariable):
+                        if size_access.size:
+                            size = var.size
+                        else:
+                            printer.addError(node.getLine(), node.getColRange(), "Unknown array size", "'" + var.type + "' used instead of 'NUM' as array size")
+
+                    else:
+                        size = var.value
+                else:
+                    printer.addError(node.getLine(), node.getColRange(), "Undefined variable", "Variable '" + var_name + "' is not defined")
+
+                return (var_name, ArrayVariable(var_name, size, node.getLine(), node.getColRange()[0]))
 
     def __parseFunction(self, node) -> (str, Function):
         if __debug__:
@@ -324,16 +330,15 @@ class Module(Scope):
 
         printer.printMessages()
 
-    def __addVariable(self, var_name, var_info) -> bool:
+    def __addVariable(self, var_name, var_info):
         if __debug__:
             assert isinstance(var_name, str), "Module.__addVariable() 'var_name'\n - Expected: 'str'\n - Got: " + str(type(var_name))
             assert isinstance(var_info, Variable), "Module.__addVariable() 'var_info'\n - Expected: 'Variable'\n - Got: " + str(type(var_info))
 
         if var_name in self.vars:
-            return False
+            return
 
         self.vars[var_name] = var_info
-        return True
 
     def __addFunction(self, func_name, func_info) -> bool:
         if __debug__:

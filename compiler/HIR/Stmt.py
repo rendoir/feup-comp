@@ -32,8 +32,13 @@ def getVar(var_name, vars_list) -> Variable:
         assert isinstance(vars_list, list), "Stmt.getVar() 'vars_list'\n - Expected 'list'\n - Got: " + str(type(vars_list))
 
     for var_list in vars_list:
-        if var_name in var_list:
-            return var_list[var_name]
+        if isinstance(var_list, dict):
+            if var_name in var_list:
+                return var_list[var_name]
+        else:
+            for var in var_list:
+                if var_name == var.name:
+                    return var
 
     if not Variable.isLiteral(var_name):
         return None
@@ -157,7 +162,7 @@ class ExprTest(Statement):
             assert isinstance(printer, ErrorPrinter), "ExprTest.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
             assert isinstance(var_list, list), "ExprTest.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
 
-        self.left.checkSemantics(printer, var_list)
+        self.left.checkSemantics(printer, var_list, True)
         self.right.checkSemantics(printer, var_list)
 
 class LeftOP(Statement):
@@ -175,12 +180,13 @@ class LeftOP(Statement):
         else:
             print("WUUUUUUUUUUUTTTTTT??????!!!!!!!");
 
-    def checkSemantics(self, printer, var_list):
+    def checkSemantics(self, printer, var_list, report_existance):
         if __debug__:
             assert isinstance(printer, ErrorPrinter), "LeftOP.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
             assert isinstance(var_list, list), "LeftOP.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
+            assert isinstance(report_existance, bool), "LeftOP.checkSemantics() 'report_existance'\n - Expected 'bool'\n - Got: " + str(type(report_existance))
 
-        self.access.checkSemantics(printer, var_list)
+        self.access.checkSemantics(printer, var_list, report_existance)
 
 
 class RightOP(Statement):
@@ -218,22 +224,8 @@ class RightOP(Statement):
             assert isinstance(printer, ErrorPrinter), "RightOP.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
             assert isinstance(var_list, list), "RightOP.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
 
-        size_accesses = 0
         for term in self.value:
             term.checkSemantics(printer, var_list)
-            if term.isSize():
-                size_accesses += 1
-
-        if self.needs_op:
-            addsub_op = self.operator is '+' or self.operator is '-'
-            if addsub_op and size_accesses >= 2:
-                if self.operator is '+':
-                    txt = "add"
-                else:
-                    txt = "subtract"
-                    printer.addError(self.line, self.cols, "Forbidden operation", "Tried to " + txt + " two accesses to array size")
-
-
 
 class Assign(Statement):
     def __init__(self, node, parent):
@@ -257,8 +249,10 @@ class Assign(Statement):
             assert isinstance(printer, ErrorPrinter), "Assign.checkSemantics() 'printer'\n - Expected: 'ErrorPrinter'\n - Got: " + str(type(printer))
             assert isinstance(var_list, list), "Assign.checkSemantics() 'var_list'\n - Expected: 'list'\n - Got: " + str(type(var_list))
 
+        self.left.checkSemantics(printer, var_list, False)
+        self.right.checkSemantics(printer, var_list)
+
         (var_name, var_info) = self.getVarInfo()
-        index = var_info.indexAccess()
         existing_var = self.__varExists(var_name, var_list)
         if existing_var is not None:
             if self.right.resultType() != existing_var.type:
@@ -291,25 +285,31 @@ class ArrayAccess(Statement):
             assert isinstance(parent, Scope), "ArrayAccess.__init__() 'parent'\n - Expected 'Scope'\n - Got: " + str(type(node))
 
         self.var = str(node.children[0])
-        self.index = str(node.children[1])
+        self.index = str(node.children[1].children[0])
 
-    def indexAccess(self):
-        return self.index
-
-    def checkSemantics(self, printer, var_list):
+    def checkSemantics(self, printer, var_list, report_existance=True):
         if __debug__:
             assert isinstance(printer, ErrorPrinter), "ArrayAccess.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
             assert isinstance(var_list, list), "ArrayAccess.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
+            assert isinstance(report_existance, bool), "ArrayAccess.checkSemantics() 'report_existance'\n - Expected 'bool'\n - Got: " + str(type(report_existance))
+
+        if not self.index.isdigit():
+            print("INDEX = " + self.index)
+            index_var = getVar(self.index, var_list)
+            if index_var is not None:
+                if not isinstance(index_var, NumberVariable):
+                    printer.addError(self.line, self.cols, "Unknown array size", "Tried to use a variable of type '" + var.type + "' as size of an array")
+            else:
+                printer.addError(self.line, self.cols, "Variable undefined", "Could not find '" + self.index + "' in current scope!")
 
         var = getVar(self.var, var_list)
 
         if var is not None:
             if not isinstance(var, ArrayVariable):
                 printer.addError(self.line, self.cols, "Indexing impossible", "Tried to index a variable of type '" + var.type + "', which is only possible with arrays")
-            elif not var.validAccess(self.index):
+            elif self.index.isdigit() and not var.validAccess(self.index):
                 printer.addError(self.line, self.cols, "Out of bounds", "Tried to index position " + self.index + " when array only has " + var.size + " positions")
-
-        else:
+        elif report_existance:
             printer.addError(self.line, self.cols, "Variable undefined", "Could not find '" + self.var + "' in current scope!")
 
 class ScalarAccess(Statement):
@@ -326,10 +326,11 @@ class ScalarAccess(Statement):
     def indexAccess(self):
         return None
 
-    def checkSemantics(self, printer, var_list):
+    def checkSemantics(self, printer, var_list, report_existance=True):
         if __debug__:
             assert isinstance(printer, ErrorPrinter), "ScalarAccess.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
             assert isinstance(var_list, list), "ScalarAccess.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
+            assert isinstance(report_existance, bool), "ScalarAccess.checkSemantics() 'report_existance'\n - Expected 'bool'\n - Got: " + str(type(report_existance))
 
         var = getVar(self.var, var_list)
 
@@ -337,7 +338,7 @@ class ScalarAccess(Statement):
             if self.size and not isinstance(var, ArrayVariable):
                 printer.addError(self.line, self.cols, "NUM has no size", "Tried to get 'size' of a '" + var.type + "' variable")
 
-        else:
+        elif report_existance:
             printer.addError(self.line, self.cols, "Variable undefined", "Could not find '" + self.var + "' in current scope!")
 
 class ArraySize(Statement):
@@ -351,7 +352,7 @@ class ArraySize(Statement):
             self.value = int(str(node.children[0]))
             self.access = False
         else: #Scalar access
-            self.value = ScalarAccess(node)
+            self.value = ScalarAccess(node.children[0], parent)
             self.access = True
 
     def isDigit(node: yalParser.Array_sizeContext):
@@ -363,7 +364,7 @@ class ArraySize(Statement):
             assert isinstance(var_list, list), "RightOP.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
 
         if self.access:
-            self.value.checkSemantics(printer, var_list)
+            self.value.checkSemantics(printer, var_list, True)
         elif self.value < 0:
             printer.addError(self.line, self.col, "Negative array size", "Tried to create an array with '" + self.value + "' positions")
 
