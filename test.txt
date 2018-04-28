@@ -3,14 +3,15 @@ module program1 {
   a[] = 1;
   N = 100;
   c[] = [N];
+  N;
   mx;         // attribute mx
   mn;         // attribute mn
 
    function a[]=det(d[], A[], b) {
-    data.size = 100;
+    wtf = data + c;
     i = + 2;
     M = d.size - 1; //d.size is the same as d.length (Java)
-    while (i < M) { // version not optimized
+    while (data < c) { // version not optimized
       a = d[i]; i=i+1; b=d[i];
       mx = library1.max(a, b);
       mn = library1.min(a, b);

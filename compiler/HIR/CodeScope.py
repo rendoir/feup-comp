@@ -116,39 +116,6 @@ class Function(Scope):
             var_list = [self.vars[1], self.vars[0], self.parent.vars]
             code_chunk.checkSemantics(printer, var_list)
 
-    def __checkAssign(self, printer, assign, var_lists) -> list:
-        from . import Stmt
-        if __debug__:
-            assert isinstance(printer, ErrorPrinter), "Function.__checkAssign() 'printer'\n - Expected: 'ErrorPrinter'\n - Got: " + str(type(printer))
-            assert isinstance(assign, Stmt.Assign), "Function.__checkAssign() 'assign'\n - Expected: 'Stmt.Assign'\n - Got: " + str(type(assign))
-            assert isinstance(var_lists, list), "Function.__checkAssign() 'var_lists'\n - Expected: 'list'\n - Got: " + str(type(var_lists))
-
-        (var_name, var_info) = assign.getVarInfo()
-        exists = False;
-        indexing = var_info.indexAccess();
-
-
-        for var_list in var_lists:
-            if var_name in var_list: #Check var type matches
-                exists = True
-                var = var_list[var_name]
-                assign_type = assign.right.resultType()
-                if assign_type != var.type:
-                    return ["Assigned wrong type to variable '{}'\n  Expected '{}', got '{}'".format(var_name, var.type, assign_type)]
-
-        if not exists:
-            var_obj = None
-            is_array = assign.isAssignArray()
-            print("Adding var '{}', is_arr '{}'".format(var_name, is_array))
-            if is_array:
-                var_obj = ArrayVariable(var_name, 0, 0, 0)
-            else:
-                var_obj = NumberVariable(var_name, 0, 0, 0)
-            self.vars[1][var_name] = var_obj
-
-        return []
-
-
 class If(Scope):
     def __init__(self, node, parent):
         if __debug__:
@@ -272,16 +239,15 @@ class Module(Scope):
         if var_name in self.vars:
             var = self.vars[var_name]
 
-
         if only_name: # Only variable name
             if var is not None:
-                printer.addWarning(line, cols, "Variable already defined", "Ignoring this line of code")
+                printer.alreadyDefined(line, cols, var_name)
 
             return (var_name, NumberVariable(var_name, None, (line, cols[0]), None))
 
         elif str(node.children[1]).isdigit(): # Constant declaration?
             if var is not None and not isinstance(var, NumberVariable):
-                printer.addError(line, cols, "Wrong assignment", "Assigned 'NUM' to '" + var.type + "' variable")
+                printer.diffTypes(line, cols, var.name, var.type, "NUM")
 
             value = int(str(node.children[1]))
             return (var_name, NumberVariable(var_name, value, (line, cols[0]), (line, cols[0])))
@@ -289,7 +255,7 @@ class Module(Scope):
         else:
             arr_size = node.children[1].children[0]
             if not isinstance(var, ArrayVariable) and var is not None:
-                printer.addError(line, cols, "Invalied assignment", "Assigned 'ARR' to '" + var.type + "' variable")
+                printer.diffTypes(line, cols, var.name, var.type, 'ARR')
                 return (var_name, None)
             else:
                 if isinstance(arr_size, yalParser.Scalar_accessContext):
@@ -305,7 +271,7 @@ class Module(Scope):
                                 else:
                                     return (var_name, ArrayVariable(var_name, size_var.size, (line, cols[0]), (line, cols[0])))
                             else:
-                                printer.addError(line, cols, "Invalid access", "Tried to access 'size' element of non array variable '" + size_var_name + "'")
+                                printer.numSize(line, cols, size_var_name, size_var.type)
                         else:
                             if isinstance(size_var, NumberVariable):
                                 if var is not None:
@@ -313,11 +279,11 @@ class Module(Scope):
                                 else:
                                     return (var_name, ArrayVariable(var_name, size_var.value, (line, cols[0]), (line, cols[0])))
                             else:
-                                printer.addError(line, cols, "Unknown operation", "Creating array size from an 'ARR' variable!\n - Maybe you mean '" + size_var_info.var + ".size'")
+                                printer.arrSizeFromArr(line, cols, size_var_info.var)
                                 return (var_name, ArrayVariable(var_name, -1, (line, cols[0]), (line, cols[0])))
 
                     else:
-                        printer.addError(line, cols, "Undefined variable", "Variable '" + size_var_name + "' is not defined")
+                        printer.undefVar(line, cols, size_var_name)
                     return (var_name, ArrayVariable(var_name, -1, (line, cols[0]), (line, cols[0])))
 
                 else:
@@ -325,7 +291,7 @@ class Module(Scope):
                         if isinstance(var, ArrayVariable):
                             var.size = int(str(arr_size))
                         else:
-                            printer.addError(line, cols, "Variable reassign", "Tried reassigning a variable from '" + var.type + "' to 'ARR'")
+                            printer.diffTypes(line, cols, var.name, var.type, 'ARR')
                     else:
                         return (var_name, ArrayVariable(var_name, int(str(arr_size)), (line, cols[0]), (line, cols[0])))
 
@@ -357,8 +323,6 @@ class Module(Scope):
         for name, func in self.code.items():
             func.checkVariables(printer)
 
-        printer.printMessages()
-
     def __addVariable(self, var_name, var_info):
         if __debug__:
             assert isinstance(var_name, str), "Module.__addVariable() 'var_name'\n - Expected: 'str'\n - Got: " + str(type(var_name))
@@ -377,17 +341,8 @@ class Module(Scope):
         if func_name in self.code:
             return False
 
-        print("Adding '" + func_name + "', info = " + str(func_info))
         self.code[func_name] = func_info
         return True
-
-    def __addVarError(self, var, printer):
-        if __debug__:
-            assert isinstance(var, yalParser.DeclarationContext), "Module.__addVarError() 'var'\n - Expected: 'yalParser.DeclarationContext'\n - Got: " + str(type(var))
-            assert isinstance(printer, ErrorPrinter), "Module.__addVarError() 'printer'\n - Expected: 'ErrorPrinter'\n - Got: " + str(type(printer))
-
-        printer.addError(var.getLine(), var.getColRange(), "Variable redeclared", "Variable " + str(var.children[0]) + " redeclared!")
-
 
     def __addFuncError(self, func, printer):
         if __debug__:
@@ -395,9 +350,9 @@ class Module(Scope):
             assert isinstance(printer, ErrorPrinter), "Module.__addFuncError() 'printer'\n - Expected: 'ErrorPrinter'\n - Got: " + str(type(printer))
 
         if isinstance(func.children[0], str) and isinstance(func.children[1], str):
-            printer.addError(func.children[1].getLine(), func.children[1].getColRange(), "Function redeclared", "Function " + str(func.children[1]) + " redeclared!")
+            printer.funcRedeclaration(func.children[1].getLine(), func.children[1].getColRange(), str(func.children[1]))
         else:
-            printer.addError(func.children[0].getLine(), func.children[0].getColRange(), "Function redeclared", "Function " + str(func.children[0]) + " redeclared!")
+            printer.funcRedeclaration(func.children[0].getLine(), func.children[0].getColRange(), str(func.children[0]))
 
     def __str__(self) -> str:
         string = "Module '" + self.name + "':\n"

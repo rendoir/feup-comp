@@ -127,7 +127,7 @@ class Call(Statement):
         #Check if function exists
         if not mod_call:
             if func_name not in self.module_functions:
-                printer.addError(self.line, self.col, "Undefined function", "Could not find '" + func_name + "' in current module!\n Maybe it belongs to another module?")
+                printer.undefFunc(self.line, self.col, func_name)
             else:
                 func_called = self.module_functions[func_name]
                 func_exists = True
@@ -138,7 +138,7 @@ class Call(Statement):
             if arg is not None:
                 call_vars.append(arg)
             else:
-                printer.addError(self.line, self.col, "Undefined variable", "Variable '" + str(arg_name) + "' is not defined")
+                printer.undefVar(self.line, self.col, str(arg_name))
                 call_vars.append(UndefinedVariable())
 
         if func_exists:
@@ -164,6 +164,9 @@ class ExprTest(Statement):
 
         self.left.checkSemantics(printer, var_list, True)
         self.right.checkSemantics(printer, var_list)
+
+        if self.left.isArr(var_list) and self.right.isArr(var_list):
+            printer.unknownComp(self.line, self.cols, self.left.access.var, str(self.op), self.right.value[0].value.var)
 
 class LeftOP(Statement):
     def __init__(self, node, parent):
@@ -194,6 +197,11 @@ class LeftOP(Statement):
     def isArrSize(self) -> bool:
         return isinstance(self.access, ScalarAccess) and self.access.size
 
+    def isArr(self, var_list) -> bool:
+        if isinstance(self.access, ScalarAccess) and not self.access.size:
+            var = getVar(self.access.var, var_list)
+            return isinstance(var, ArrayVariable)
+
 class RightOP(Statement):
     def __init__(self, node, parent):
         super(RightOP, self).__init__(node, parent)
@@ -214,7 +222,7 @@ class RightOP(Statement):
         else:
             self.value.append(Term(node.children[0], parent))
             self.operator = str(node.children[1])
-            self.value.append(Term(node.children[0], parent))
+            self.value.append(Term(node.children[2], parent))
             self.needs_op = True
             self.arr_size = False
 
@@ -231,6 +239,13 @@ class RightOP(Statement):
 
         for term in self.value:
             term.checkSemantics(printer, var_list)
+
+        if self.needs_op and self.value[0].isArray(var_list) and self.value[1].isArray(var_list):
+            printer.unknownOp(self.line, self.cols, self.value[0].getVarName(), self.operator, self.value[1].getVarName())
+
+
+    def isArr(self, var_list) -> bool:
+        return len(self.value) is 1 and self.value[0].isArray(var_list)
 
 class Assign(Statement):
     def __init__(self, node, parent):
@@ -262,9 +277,9 @@ class Assign(Statement):
 
         if existing_var is not None:
             if self.left.isArrSize():
-                printer.addError(self.line, self.cols, "Unknown operation", "Tried to assign a value to the 'size' of an array")
+                printer.sizeAssign(self.line, self.cols, self.left.access.var, 100) #TODO turn right_op into str
             elif self.right.resultType() != existing_var.type and not self.left.isArrAccess():
-                printer.addError(self.line, self.cols, "Wrong assignment", "Tried to assign a '" + self.right.resultType() + "' to a '" + existing_var.type + "' variable")
+                printer.diffTypes(self.line, self.cols, existing_var.name, existing_var.type, self.right.resultType())
         else:
             var_obj = None
             # TODO add array size and number value
@@ -305,19 +320,19 @@ class ArrayAccess(Statement):
             index_var = getVar(self.index, var_list)
             if index_var is not None:
                 if not isinstance(index_var, NumberVariable):
-                    printer.addError(self.line, self.cols, "Unknown array size", "Tried to use a variable of type '" + var.type + "' as size of an array")
+                    printer.arrSizeNaN(self.line, self.cols, var.type)
             else:
-                printer.addError(self.line, self.cols, "Variable undefined", "Could not find '" + self.index + "' in current scope!")
+                printer.undefVar(self.line, self.cols, self.index)
 
         var = getVar(self.var, var_list)
 
         if var is not None:
             if not isinstance(var, ArrayVariable):
-                printer.addError(self.line, self.cols, "Indexing impossible", "Tried to index a variable of type '" + var.type + "', which is only possible with arrays")
+                printer.numberIndexing(self.line, self.cols, var.name, var.type)
             elif self.index.isdigit() and not var.validAccess(int(self.index)):
-                printer.addError(self.line, self.cols, "Out of bounds", "Tried to index position " + self.index + " when array only has " + str(var.size) + " positions\n ---> (Index starts at 0)")
+                printer.outOfBounds(self.line, self.cols, var.name, var.size, self.index)
         elif report_existance:
-            printer.addError(self.line, self.cols, "Variable undefined", "Could not find '" + self.var + "' in current scope!")
+            printer.undefVar(self.line, self.cols, self.var)
 
 class ScalarAccess(Statement):
     def __init__(self, node, parent):
@@ -343,10 +358,10 @@ class ScalarAccess(Statement):
 
         if var is not None:
             if self.size and not isinstance(var, ArrayVariable):
-                printer.addError(self.line, self.cols, "NUM has no size", "Tried to get 'size' of a '" + var.type + "' variable")
+                printer.numSize(self.line, self.cols, var.name, var.type)
 
         elif report_existance:
-            printer.addError(self.line, self.cols, "Variable undefined", "Could not find '" + self.var + "' in current scope!")
+            printer.undefVar(self.line, self.cols, self.var)
 
 class ArraySize(Statement):
     def __init__(self, node, parent):
@@ -373,7 +388,7 @@ class ArraySize(Statement):
         if self.access:
             self.value.checkSemantics(printer, var_list, True)
         elif self.value < 0:
-            printer.addError(self.line, self.col, "Negative array size", "Tried to create an array with '" + self.value + "' positions")
+            printer.negSize(self.line, self.col, self.value)
 
 
 class Term(Statement):
@@ -410,6 +425,14 @@ class Term(Statement):
             return self.value.size
         return False
 
+    def isArray(self, var_list) -> bool:
+        if isinstance(self.value, ScalarAccess) and not self.value.size:
+            var = getVar(self.value.var, var_list)
+            if var is not None:
+                return isinstance(var, ArrayVariable)
+            else: # Due to error propagation
+                return False
+
     def checkSemantics(self, printer, var_list):
         if __debug__:
             assert isinstance(printer, ErrorPrinter), "Term.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
@@ -417,3 +440,7 @@ class Term(Statement):
 
         if not isinstance(self.value, int):
             self.value.checkSemantics(printer, var_list)
+
+    def getVarName(self) -> str:
+        if isinstance(self.value, ArrayAccess) or isinstance(self.value, ScalarAccess):
+            return self.value.var
