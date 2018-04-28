@@ -24,7 +24,7 @@ The parser code is in the .g4 file.
 
 ### Symbol Table
 
- - :whit_check_mark: Storing function variables in the same place.
+ - :white_check_mark: Storing function variables in the same place.
 
 ### Semantic Analysis
 
@@ -37,7 +37,7 @@ The parser code is in the .g4 file.
         var.size = 20; //Error
 
  - :x: Comparison between arrays is not possible
- - :x: Check if type of arguments passed on function call is valid
+ - :white_check_mark: Check if type of arguments passed on function call is valid
  - :x: Branching declaration (variables declared/initialized within if/else must be checked)
 
  ### Code Generation
