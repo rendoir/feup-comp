@@ -157,7 +157,8 @@ class ExprTest(Statement):
             assert isinstance(printer, ErrorPrinter), "ExprTest.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
             assert isinstance(var_list, list), "ExprTest.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
 
-
+        self.left.checkSemantics(printer, var_list)
+        self.right.checkSemantics(printer, var_list)
 
 class LeftOP(Statement):
     def __init__(self, node, parent):
@@ -174,6 +175,14 @@ class LeftOP(Statement):
         else:
             print("WUUUUUUUUUUUTTTTTT??????!!!!!!!");
 
+    def checkSemantics(self, printer, var_list):
+        if __debug__:
+            assert isinstance(printer, ErrorPrinter), "LeftOP.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
+            assert isinstance(var_list, list), "LeftOP.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
+
+        self.access.checkSemantics(printer, var_list)
+
+
 class RightOP(Statement):
     def __init__(self, node, parent):
         super(RightOP, self).__init__(node, parent)
@@ -181,20 +190,20 @@ class RightOP(Statement):
             assert isinstance(node, yalParser.Right_opContext), "RightOP.__init__() 'node'\n - Expected 'yalParser.Right_opContext'\n - Got: " + str(type(node))
             assert isinstance(parent, Scope), "RightOP.__init__() 'parent'\n - Expected 'Scope'\n - Got: " + str(type(parent))
 
-        self.value = {}
+        self.value = []
 
         if isinstance(node.children[0], tree.Tree.TerminalNodeImpl):
-            self.value[0] = ArraySize(node.children[1], parent)
+            self.value.append(ArraySize(node.children[1], parent))
             self.needs_op = False
             self.arr_size = True
         elif node.getChildCount() is 1: #Only term
-            self.value[0] = Term(node.children[0], parent)
+            self.value.append(Term(node.children[0], parent))
             self.needs_op = False
             self.arr_size = False
         else:
-            self.value[0] = Term(node.children[0], parent)
-            self.operator = node.children[1]
-            self.value[1] = Term(node.children[0], parent)
+            self.value.append(Term(node.children[0], parent))
+            self.operator = str(node.children[1])
+            self.value.append(Term(node.children[0], parent))
             self.needs_op = True
             self.arr_size = False
 
@@ -203,6 +212,28 @@ class RightOP(Statement):
             return "ARR"
         else:
             return "NUM"
+
+    def checkSemantics(self, printer, var_list):
+        if __debug__:
+            assert isinstance(printer, ErrorPrinter), "RightOP.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
+            assert isinstance(var_list, list), "RightOP.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
+
+        size_accesses = 0
+        for term in self.value:
+            term.checkSemantics(printer, var_list)
+            if term.isSize():
+                size_accesses += 1
+
+        if self.needs_op:
+            addsub_op = self.operator is '+' or self.operator is '-'
+            if addsub_op and size_accesses >= 2:
+                if self.operator is '+':
+                    txt = "add"
+                else:
+                    txt = "subtract"
+                    printer.addError(self.line, self.cols, "Forbidden operation", "Tried to " + txt + " two accesses to array size")
+
+
 
 class Assign(Statement):
     def __init__(self, node, parent):
@@ -265,12 +296,28 @@ class ArrayAccess(Statement):
     def indexAccess(self):
         return self.index
 
+    def checkSemantics(self, printer, var_list):
+        if __debug__:
+            assert isinstance(printer, ErrorPrinter), "ArrayAccess.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
+            assert isinstance(var_list, list), "ArrayAccess.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
+
+        var = getVar(self.var, var_list)
+
+        if var is not None:
+            if not isinstance(var, ArrayVariable):
+                printer.addError(self.line, self.cols, "Indexing impossible", "Tried to index a variable of type '" + var.type + "', which is only possible with arrays")
+            elif not var.validAccess(self.index):
+                printer.addError(self.line, self.cols, "Out of bounds", "Tried to index position " + self.index + " when array only has " + var.size + " positions")
+
+        else:
+            printer.addError(self.line, self.cols, "Variable undefined", "Could not find '" + self.var + "' in current scope!")
+
 class ScalarAccess(Statement):
     def __init__(self, node, parent):
         super(ScalarAccess, self).__init__(node, parent)
         if __debug__:
             assert isinstance(node, yalParser.Scalar_accessContext), "ScalarAccess.__init__() 'node'\n - Expected 'yalParser.Scalar_accessContext'\n - Got: " + str(type(node))
-            assert isinstance(parent, Scope), "ScalarAccess.__init__() 'parent'\n - Expected 'Scope'\n - Got: " + str(type(node))
+            assert isinstance(parent, Scope), "ScalarAccess.__init__() 'parent'\n - Expected 'Scope'\n - Got: " + str(type(parent))
 
 
         self.var = str(node.children[0])
@@ -278,6 +325,20 @@ class ScalarAccess(Statement):
 
     def indexAccess(self):
         return None
+
+    def checkSemantics(self, printer, var_list):
+        if __debug__:
+            assert isinstance(printer, ErrorPrinter), "ScalarAccess.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
+            assert isinstance(var_list, list), "ScalarAccess.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
+
+        var = getVar(self.var, var_list)
+
+        if var is not None:
+            if self.size and not isinstance(var, ArrayVariable):
+                printer.addError(self.line, self.cols, "NUM has no size", "Tried to get 'size' of a '" + var.type + "' variable")
+
+        else:
+            printer.addError(self.line, self.cols, "Variable undefined", "Could not find '" + self.var + "' in current scope!")
 
 class ArraySize(Statement):
     def __init__(self, node, parent):
@@ -295,6 +356,17 @@ class ArraySize(Statement):
 
     def isDigit(node: yalParser.Array_sizeContext):
         return str(node.children[0]).isdigit();
+
+    def checkSemantics(self, printer, var_list):
+        if __debug__:
+            assert isinstance(printer, ErrorPrinter), "RightOP.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
+            assert isinstance(var_list, list), "RightOP.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
+
+        if self.access:
+            self.value.checkSemantics(printer, var_list)
+        elif self.value < 0:
+            printer.addError(self.line, self.col, "Negative array size", "Tried to create an array with '" + self.value + "' positions")
+
 
 class Term(Statement):
     def __init__(self, node, parent):
@@ -324,3 +396,16 @@ class Term(Statement):
             self.value = int(str(child))
         else:
             print("HMMMMMMMMMMMMM?!!?!")
+
+    def isSize(self) -> bool:
+        if isinstance(self.value, ScalarAccess):
+            return self.value.size
+        return False
+
+    def checkSemantics(self, printer, var_list):
+        if __debug__:
+            assert isinstance(printer, ErrorPrinter), "Term.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
+            assert isinstance(var_list, list), "Term.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
+
+        if not isinstance(self.value, int):
+            self.value.checkSemantics(printer, var_list)

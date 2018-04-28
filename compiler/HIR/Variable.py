@@ -46,12 +46,19 @@ class NumberVariable (Variable):
             self.init = init
 
 class ArrayVariable(Variable):
-    def __init__(self, name: str, size: list, decl: int, init: int):
+    def __init__(self, name: str, size: int, decl: int, init: int):
         super(ArrayVariable, self).__init__(name, "ARR", decl, init)
         self.size = size;
 
     def __str__(self):
         return self.name + "[]"
+
+    def validAccess(access) -> bool:
+        if __debug__:
+            assert isinstance(access, int), "ArrayVariable.validAccess() 'access'\n - Expected 'int'\n - Got: " + str(type(access))
+
+        # When size is -1, it means its impossible to know size
+        return (self.size > access or self.size is -1)
 
     def setInit(self, value: int, init: int):
         print("How was this called!?")

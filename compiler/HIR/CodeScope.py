@@ -194,6 +194,15 @@ class If(Scope):
     def getVars(self) -> list:
         return [self.vars]
 
+    def checkSemantics(self, printer, var_list):
+        if __debug__:
+            assert isinstance(printer, ErrorPrinter), "If.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
+            assert isinstance(var_list, list), "If.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
+
+        self.test.checkSemantics(printer, var_list)
+        vars = Scope.getVars(self)
+        for code_line in self.body:
+            code_line.checkSemantics(printer, vars)
 
 class While(Scope):
     def __init__(self, node, parent):
@@ -216,6 +225,7 @@ class While(Scope):
             assert isinstance(printer, ErrorPrinter), "While.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
             assert isinstance(var_list, list), "While.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
 
+        self.test.checkSemantics(printer, var_list)
         vars = Scope.getVars(self)
         for code_line in self.body:
             code_line.checkSemantics(printer, vars)
