@@ -17,7 +17,7 @@ module program1 {
     vars = [2];
     varss = [1];
     varsss = 2;
-    det(vars, varss, var);
+    det(vars, varss, varsss);
     io.println("max: ", mx);
     io.println("min: ", mn);
   }

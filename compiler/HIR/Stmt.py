@@ -9,8 +9,8 @@ from compiler.Printer import ErrorPrinter
 def parseStmt(stmt, parent) -> ParserRuleContext:
     from . import CodeScope
     if __debug__:
-        assert isinstance(stmt, yalParser.StmtContext), "Stmt.parseStmt() 'stmt' should be 'yalParser.StmtContext'"
-        assert isinstance(parent, CodeScope.Scope), "Stmt.parseStmt() 'parent' should be 'CodeScope.Scope'"
+        assert isinstance(stmt, yalParser.StmtContext), "Stmt.parseStmt() 'stmt'\n - Expected 'yalParser.StmtContext'\n - Got: " + str(type(stmt))
+        assert isinstance(parent, CodeScope.Scope), "Stmt.parseStmt() 'parent'\n - Expected 'CodeScope.Scope'\n - Got: " + str(type(parent))
 
     child = stmt.children[0]
     if isinstance(child, yalParser.While_yalContext):
@@ -20,15 +20,15 @@ def parseStmt(stmt, parent) -> ParserRuleContext:
     elif isinstance(child, yalParser.AssignContext):
         return Assign(child)
     elif isinstance(child, yalParser.CallContext):
-        return Call(child.children[0], child.children[1])
+        return Call(child)
     else:
         print("Oh damn boie")
         return None
 
 def getVar(var_name, vars_list) -> Variable:
     if __debug__:
-        assert isinstance(var_name, str), "Stmt.getVar() 'var_name' should be 'str'"
-        assert isinstance(vars_list, list), "Stmt.getVar() 'vars_list' should be 'list'"
+        assert isinstance(var_name, str), "Stmt.getVar() 'var_name'\n - Expected 'str'\n - Got: " + str(type(var_name))
+        assert isinstance(vars_list, list), "Stmt.getVar() 'vars_list'\n - Expected 'list'\n - Got: " + str(type(vars_list))
 
     for var_list in vars_list:
         if var_name in var_list:
@@ -41,9 +41,9 @@ def getVar(var_name, vars_list) -> Variable:
 
 def expectedGot(func_name, gotten, expected) -> str:
     if __debug__:
-        assert isinstance(func_name, str), "Stmt.expectedGot() 'func_name' should be 'str'"
-        assert isinstance(gotten, list), "Stmt.expectedGot() 'gotten' should be 'list'"
-        assert isinstance(expected, list), "Stmt.expectedGot() 'expected' should be 'list'"
+        assert isinstance(func_name, str), "Stmt.expectedGot() 'func_name'\n - Expected 'str'\n - Got: " + str(type(func_name))
+        assert isinstance(gotten, list), "Stmt.expectedGot() 'gotten'\n - Expected 'list'\n - Got: " + str(type(gotten))
+        assert isinstance(expected, list), "Stmt.expectedGot() 'expected'\n - Expected 'list'\n - Got: " + str(type(expected))
 
     ret = "Expected " + func_name + "("
     remove = False
@@ -65,23 +65,23 @@ def expectedGot(func_name, gotten, expected) -> str:
     return ret
 
 class Call:
-    def __init__(self, calls, args_node):
+    def __init__(self, node):
         if __debug__:
-            assert isinstance(calls, str), "Call.__init__() 'calls' should be 'str'"
-            assert isinstance(args_node, yalParser.Arg_listContext), "Call.__init__() 'args_node' should be 'yalParser.Arg_listContext'"
+            assert isinstance(node, yalParser.CallContext), "Call.__init__() 'node'\n - Expected 'yalParser.CallContext'\n - Got: " + str(type(node))
 
-        self.calls = calls.split('.')
+        self.line = node.getLine()
+        self.col = node.getColRange()
+        self.calls = node.children[0]
         self.args = []
-        for arg in args_node.children:
-            self.args.append(str(arg))
-
+        for arg in node.children[1].children:
+            self.args.append(arg)
 
     def __checkArguments(self, func_name: str, func_called, call_vars) -> str:
         from . import CodeScope
         if __debug__:
-            assert isinstance(func_name, str), "Call.__checkArguments() 'func_name' should be 'str'"
-            assert isinstance(func_called, CodeScope.Function), "Call.__checkArguments() 'func_called' should be 'CodeScope.Function'"
-            assert isinstance(call_vars, list), "Call.__checkArguments() 'call_vars' should be 'list'"
+            assert isinstance(func_name, str), "Call.__checkArguments() 'func_name'\n - Expected 'str'\n - Got: " + str(type(func_name))
+            assert isinstance(func_called, CodeScope.Function), "Call.__checkArguments() 'func_called'\n - Expected 'CodeScope.Function'\n - Got: " + str(type(func_called))
+            assert isinstance(call_vars, list), "Call.__checkArguments() 'call_vars'\n - Expected 'list'\n - Got: " + str(type(call_vars))
 
         func_args = func_called.vars[0]
         wrong = False
@@ -89,22 +89,19 @@ class Call:
         if len(call_vars) is len(func_called.vars[0]):
             for i in range(len(call_vars)):
                 wrong = (wrong or (call_vars[i] != func_called.vars[0][i]))
-                print("WRONG = " + str(wrong))
 
         if wrong:
             return expectedGot(func_name, call_vars, func_args)
         return None;
 
-    def checkSemantics(self, printer, var_list, mod_funcs) -> List[str]:
+    def checkSemantics(self, printer, var_list, mod_funcs):
         from . import CodeScope
         if __debug__:
-            assert isinstance(printer, ErrorPrinter), "Call.checkSemantics() 'printer' should be 'ErrorPrinter'"
-            assert isinstance(var_list, list), "Call.checkSemantics() 'var_list' should be 'list'"
-            assert isinstance(mod_funcs, dict), "Call.checkSemantics() 'mod_funcs' should be 'dict'"
+            assert isinstance(printer, ErrorPrinter), "Call.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
+            assert isinstance(var_list, list), "Call.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
+            assert isinstance(mod_funcs, dict), "Call.checkSemantics() 'mod_funcs'\n - Expected 'dict'\n - Got: " + str(type(mod_funcs))
 
-        errors = []
-
-        func_name = self.calls[0]
+        func_name = str(self.calls[0])
         func_called = None
         func_exists = False
         mod_call = len(self.calls) is 2
@@ -112,7 +109,7 @@ class Call:
         #Check if function exists
         if not mod_call:
             if func_name not in mod_funcs:
-                errors.append("Function '" + func_name + "' not defined!")
+                printer.addError(self.line, self.col, "Undefined function", "Could not find '" + func_name + "' in current module!\n Maybe it belongs to another module?")
             else:
                 func_called = mod_funcs[func_name]
                 func_exists = True
@@ -120,11 +117,11 @@ class Call:
 
         call_vars = []
         for arg_name in self.args:
-            arg = getVar(arg_name, var_list)
+            arg = getVar(str(arg_name), var_list)
             if arg is not None:
                 call_vars.append(arg)
             else:
-                errors.append("Variable '" + arg_name + "' not defined!")
+                printer.addError(self.line, self.col, "Undefined variable", "Variable '" + str(arg_name) + "' is not defined")
                 call_vars.append(UndefinedVariable())
 
         if func_exists:
@@ -132,12 +129,10 @@ class Call:
             if msg is not None:
                 errors.append(msg)
 
-        return errors
-
 class ExprTest:
     def __init__(self, node):
         if __debug__:
-            assert isinstance(node, yalParser.ExprtestContext), "ExprTest.__init__() 'node' should be 'yalParser.ExprtestContext'"
+            assert isinstance(node, yalParser.ExprtestContext), "ExprTest.__init__() 'node'\n - Expected 'yalParser.ExprtestContext'\n - Got: " + str(type(node))
 
         self.op = node.children[1]
         self.left = LeftOP(node.children[0])
@@ -146,7 +141,7 @@ class ExprTest:
 class LeftOP:
     def __init__(self, node):
         if __debug__:
-            assert isinstance(node, yalParser.Left_opContext), "LeftOP.__init__() 'node' should be 'yalParser.Left_opContext'"
+            assert isinstance(node, yalParser.Left_opContext), "LeftOP.__init__() 'node'\n - Expected 'yalParser.Left_opContext'\n - Got: " + str(type(node))
 
         child = node.children[0]
         if (isinstance(child, yalParser.Array_accessContext)):
@@ -159,7 +154,7 @@ class LeftOP:
 class RightOP:
     def __init__(self, node):
         if __debug__:
-            assert isinstance(node, yalParser.Right_opContext), "RightOP.__init__() 'node' should be 'yalParser.Right_opContext'"
+            assert isinstance(node, yalParser.Right_opContext), "RightOP.__init__() 'node'\n - Expected 'yalParser.Right_opContext'\n - Got: " + str(type(node))
 
         self.value = {}
 
@@ -187,7 +182,7 @@ class RightOP:
 class Assign:
     def __init__(self, node):
         if __debug__:
-            assert isinstance(node, yalParser.AssignContext), "Assign.__init__() 'node' should be 'yalParser.AssignContext'"
+            assert isinstance(node, yalParser.AssignContext), "Assign.__init__() 'node'\n - Expected 'yalParser.AssignContext'\n - Got: " + str(type(node))
 
         self.left = LeftOP(node.children[0])
         self.right = RightOP(node.children[1])
@@ -204,7 +199,7 @@ class Assign:
 class ArrayAccess:
     def __init__(self, node: yalParser.Array_accessContext):
         if __debug__:
-            assert isinstance(node, yalParser.Array_accessContext), "ArrayAccess.__init__() 'node' should be 'yalParser.Array_accessContext'"
+            assert isinstance(node, yalParser.Array_accessContext), "ArrayAccess.__init__() 'node'\n - Expected 'yalParser.Array_accessContext'\n - Got: " + str(type(node))
 
         self.var = str(node.children[0])
         self.index = str(node.children[1])
@@ -215,7 +210,7 @@ class ArrayAccess:
 class ScalarAccess:
     def __init__(self, node):
         if __debug__:
-            assert isinstance(node, yalParser.Scalar_accessContext), "ScalarAccess.__init__() 'node' should be 'yalParser.Scalar_accessContext'"
+            assert isinstance(node, yalParser.Scalar_accessContext), "ScalarAccess.__init__() 'node'\n - Expected 'yalParser.Scalar_accessContext'\n - Got: " + str(type(node))
 
         self.var = str(node.children[0])
         self.size = (len(node.children) is 2)
@@ -228,7 +223,7 @@ class ScalarAccess:
 class ArraySize:
     def __init__(self, node):
         if __debug__:
-            assert isinstance(node, yalParser.Array_sizeContext), "ArraySize.__init__() 'node' should be 'yalParser.Array_sizeContext'"
+            assert isinstance(node, yalParser.Array_sizeContext), "ArraySize.__init__() 'node'\n - Expected 'yalParser.Array_sizeContext'\n - Got: " + str(type(node))
 
         if ArraySize.isDigit(node):
             self.value = int(str(node.children[0]))
@@ -243,7 +238,7 @@ class ArraySize:
 class Term:
     def __init__(self, node: yalParser.TermContext):
         if __debug__:
-            assert isinstance(node, yalParser.TermContext), "Term.__init__() 'node' should be 'yalParser.TermContext'"
+            assert isinstance(node, yalParser.TermContext), "Term.__init__() 'node'\n - Expected 'yalParser.TermContext'\n - Got: " + str(type(node))
 
         base = 0
         if isinstance(node, tree.Tree.TerminalNodeImpl):
@@ -257,7 +252,7 @@ class Term:
 
 
         if isinstance(child, yalParser.CallContext):
-            self.value = Call(child.children[0], child.children[1])
+            self.value = Call(child)
         elif isinstance(child, yalParser.Array_accessContext):
             self.value = ArrayAccess(child)
         elif isinstance(child, yalParser.Scalar_accessContext):

@@ -44,7 +44,7 @@ exprtest: LPAR left_op REL_OP right_op RPAR;
 while_yal: WHILE exprtest L_BRACKET stmt_list R_BRACKET;
 if_yal: IF exprtest L_BRACKET stmt_list R_BRACKET else_yal?;
 else_yal:  ELSE L_BRACKET stmt_list R_BRACKET;
-call: ID ('.' ID)? LPAR (arg_list) RPAR;
+call: ID ('.' ID)? LPAR arg_list RPAR;
 arg_list: arg (COMMA arg)*;
 arg: (ID | STRING | NUMBER);
 array_access: ID '[' index ']';

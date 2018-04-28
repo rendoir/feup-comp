@@ -24,7 +24,7 @@ def main(argv):
 
 
     module = Module()
-    module.parseTree(tree)
+    module.parseTree(tree, printer)
     module.semanticCheck(printer)
 
 if __name__ == '__main__':

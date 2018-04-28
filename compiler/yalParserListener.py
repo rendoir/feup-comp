@@ -2,23 +2,6 @@ from antlr_yal import *
 from antlr4 import *
 from pprint import pprint
 
-def getCaller(children:yalParser.CallContext):
-    caller = ""
-    end = False
-    for child in children:
-        if end:
-            return (caller, child)
-
-        if str(child) == "(":
-            end = True
-        else:
-            caller += str(child)
-
-    print("Caller parenthesis not found!")
-    for child in children:
-        print("    " + str(child))
-    return None
-
 def eraseChilds(ctx:ParserRuleContext):
     for i in range(ctx.getChildCount()):
         ctx.removeLastChild()
@@ -49,20 +32,22 @@ class yalParserListener(yalListener):
 
     # Holds [<element>]
     # OR
-    # Holds [<element>, '[', <arr_size>, ']']
+    # Holds [<element>, <arr_size>]
     # OR
     # Holds [<element>, <NUMBER>]
     def exitDeclaration(self, ctx:yalParser.DeclarationContext):
-        ctx.children[0] = ctx.children[0].getText()
         if valid(ctx, 2):
-            count = ctx.getChildCount()
-            del ctx.children[ctx.getChildCount() - 1] # D_COMMA
+            del ctx.children[-1] # D_COMMA
 
-            if count is 4:
-                del ctx.children[1] #Erase '='
-            if count is 6:
-                ctx.children[3] = ctx.children[3].getText()
-                del ctx.children[1] #Erase '='
+            if len(ctx.children) > 3:
+                if str(ctx.children[2]) is '[':
+                    del ctx.children[4]
+                    del ctx.children[2]
+                elif str(ctx.children[2]) is '+' or str(ctx.children[2]) is '-':
+                    ctx.children[3] = int(str(ctx.children[2]) + str(ctx.children[3]))
+                    del ctx.children[2]
+
+                del ctx.children[1]
 
 
     # Holds [<var_name>, <func_name>, <var_list>?, <stmt_list>]
@@ -84,23 +69,17 @@ class yalParserListener(yalListener):
 
             if str(ctx.children[2]) is '=':
                 del ctx.children[2]
-                ctx.children[2] = varToString(ctx.children[2])
 
             del ctx.children[0]
-            ctx.children[0] = varToString(ctx.children[0])
 
 
 
     # Holds [<var1>, <var2> ...]
-    # TODO double check
     def exitVar_list(self, ctx:yalParser.Var_listContext):
         if valid(ctx, 3):
             count = int(ctx.getChildCount() / 2)
             for i in range(1, count + 1, 1): # Delete ','
                 del ctx.children[i]
-
-            for i in range(ctx.getChildCount()):
-                ctx.children[i] = ctx.children[i].getText()
 
     # Just removes the ';'
     def exitStmt(self, ctx:yalParser.StmtContext):
@@ -121,9 +100,8 @@ class yalParserListener(yalListener):
     # Holds [<ID> <index_access>]
     def exitArray_access(self, ctx:yalParser.Array_accessContext):
         if valid(ctx, 4):
-            ctx.children[2] = ctx.children[2].children[0].getText()
-            del ctx.children[1]
-            del ctx.children[2]
+            del ctx.children[-1]
+            del ctx.children[-2]
 
     # Holds [<var_name>] or [<var_name>, <SIZE>]
     # Transforms scalar access into either a single node (no SIZE), or two nodes if it has SIZE
@@ -168,9 +146,13 @@ class yalParserListener(yalListener):
     #  where name is a string which when split with '.' gives the access
     def exitCall(self, ctx:yalParser.CallContext):
         if valid(ctx, 4):
-            res = getCaller(ctx.getChildren())
-            if res is not None:
-                (caller, args) = (res[0], res[1])
-                eraseChilds(ctx)
-                ctx.addChild(caller)
-                ctx.addChild(args)
+            del ctx.children[-1]
+            del ctx.children[-2]
+
+            # Check if it is a module call
+            if len(ctx.children) is 4:
+                ctx.children[0] = [ctx.children[0], ctx.children[1]]
+                del ctx.children[2]
+                del ctx.children[1]
+            else:
+                ctx.children[0] = [ctx.children[0]]
