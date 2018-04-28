@@ -33,8 +33,11 @@ class ErrorPrinter:
 
         error_message += "\n" + BOLD + simple_msg + RESET + " -> " + UNDERLINE + "(" + str(line-1) + ":" + str(col[0]) + ")\n" + RESET
         error_message += " " + err_txt + "\n"
+
+        print("COL[0] = " + str(col[0]) + ", COL[1] = " + str(col[1]) + ", len = " + str(len(err_txt)))
+
         for i in range(-1, len(err_txt)):
-            if i >= col[0] and i < col[1]:
+            if (i >= col[0] and i < (col[1]-col[0])):
                 error_message += RED + "^"
             else:
                 error_message += " "

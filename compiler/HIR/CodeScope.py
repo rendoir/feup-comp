@@ -28,10 +28,38 @@ class Scope:
 
         self.vars = {}
         self.code = []
-        self.parent_scope = parent
+        self.parent = parent
 
     def addVar(self, name, var):
         raise NotImplementedError( "Should have implemented this" )
+
+    def getFunctions(scope) -> dict:
+        if __debug__:
+            assert isinstance(scope, Scope) or scope is None, "Scope.getFunctions() 'scope'\n - Expected: 'Scope'\n - Got: " + str(type(ret_var))
+
+        parent = scope.parent
+        while parent.parent is not None:
+            parent = parent.parent
+
+        return parent.code
+
+    def getVars(self) -> list:
+        raise NotImplementedError("Should have implemented Scope::getVars()")
+
+    def getVars(scope) -> list:
+        if __debug__:
+            assert isinstance(scope, Scope) or scope is None, "Scope.getVars() 'scope'\n - Expected: 'Scope'\n - Got: " + str(type(ret_var))
+
+        ret = []
+        temp = scope
+        while temp.parent is not None:
+            for vars in temp.getVars():
+                ret.insert(-1, vars)
+            temp = temp.parent
+
+        ret.insert(-1, temp.getVars())
+        return ret
+
 
 # 20 maças, cortar laminadas ++ fino, marshmallows 1 por cada pessoa (+- 100), espeto para por marshmallows (dar para pelos menos 15),
 
@@ -47,13 +75,22 @@ class Function(Scope):
         self.ret_is_arr = False
         self.vars = [[], dict()] #[<arguments>, <local_variables>]
         self.code = []
-        self.parent_scope = parent
+        self.parent = parent
         if args is not None:
             self.__addArgs(args)
 
         if stmts is not None:
             self.__addStmts(stmts.children)
 
+    def addVar(self, name, var):
+        if __debug__:
+            assert isinstance(name, str), "Function.addVar() 'name'\n - Expected: 'str'\n - Got: " + str(type(name))
+            assert isinstance(var, Variable), "Function.addVar() 'var'\n - Expected: 'Variable'\n - Got: " + str(type(var))
+
+        self.vars[1][name] = var
+
+    def getVars(self) -> list:
+        return [self.vars[1], self.vars[0]]
 
     def __addArgs(self, args):
         if __debug__:
@@ -78,8 +115,11 @@ class Function(Scope):
     def __str__(self) -> str:
         string = "("
         for arg in self.vars[0]:
-            print(arg)
-            string += str(arg) + " "
+            string += str(arg) + ", "
+
+        if len(string) > 2:
+            string = string[:-2]
+
         string += ")\n"
         return string
 
@@ -89,14 +129,8 @@ class Function(Scope):
             assert isinstance(printer, ErrorPrinter), "Function.checkVariables() 'printer'\n - Expected: 'ErrorPrinter'\n - Got: " + str(type(printer))
 
         for code_chunk in self.code:
-            var_list = [self.vars[1], self.vars[0], self.parent_scope.vars]
-
-            if isinstance(code_chunk, yalParser.While_yalContext) or isinstance(code_chunk, yalParser.If_yalContext):
-                code_chunk.checkVariables(printer, var_list)
-            elif isinstance(code_chunk, Stmt.Assign):
-                self.__checkAssign(printer, code_chunk, var_list)
-            elif isinstance(code_chunk, Stmt.Call):
-                code_chunk.checkSemantics(printer, var_list, self.parent_scope.code)
+            var_list = [self.vars[1], self.vars[0], self.parent.vars]
+            code_chunk.checkSemantics(printer, var_list)
 
     def __checkAssign(self, printer, assign, var_lists) -> list:
         from . import Stmt
@@ -137,7 +171,7 @@ class If(Scope):
             assert isinstance(node, yalParser.If_yalContext), "If.__init__() 'node'\n - Expected: 'yalParser.If_yalContext'\n - Got: " + str(type(node))
             assert isinstance(parent, Scope), "If.__init__() 'parent'\n - Expected: 'Scope'\n - Got: " + str(type(parent))
 
-        self.parent_scope = parent
+        self.parent = parent
         self.test = ExprTest(node.children[0])
         self.vars = dict()
         self.code = []
@@ -150,6 +184,17 @@ class If(Scope):
             for stmt in node.children[2].children:
                 self.else_code.append(parseStmt(stmt, self))
 
+    def addVar(self, name, var):
+        if __debug__:
+            assert isinstance(name, str), "If.addVar() 'name'\n - Expected: 'str'\n - Got: " + str(type(name))
+            assert isinstance(var, Variable), "If.addVar() 'var'\n - Expected: 'Variable'\n - Got: " + str(type(var))
+
+        self.vars[name] = var
+
+    def getVars(self) -> list:
+        return [self.vars]
+
+
 class While(Scope):
     def __init__(self, node, parent):
         from . import Stmt
@@ -157,19 +202,43 @@ class While(Scope):
             assert isinstance(node, yalParser.While_yalContext), "While.__init__() 'node'\n - Expected: 'yalParser.While_yalContext'\n - Got: " + str(type(node))
             assert isinstance(parent, Scope), "While.__init__() 'parent'\n - Expected: 'Scope'\n - Got: " + str(type(parent))
 
-        self.parent_scope = parent
-        self.test = Stmt.ExprTest(node.children[0])
+        self.line = node.getLine()
+        self.cols = node.getColRange()
+        self.parent = parent
+        self.test = Stmt.ExprTest(node.children[0], parent)
         self.body = []
         self.vars = dict()
         for stmt in node.children[1].children:
             self.body.append(Stmt.parseStmt(stmt, self))
 
+    def checkSemantics(self, printer, var_list):
+        if __debug__:
+            assert isinstance(printer, ErrorPrinter), "While.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
+            assert isinstance(var_list, list), "While.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
+
+        vars = Scope.getVars(self)
+        for code_line in self.body:
+            code_line.checkSemantics(printer, vars)
+
+    def addVar(self, name, var):
+        if __debug__:
+            assert isinstance(name, str), "While.addVar() 'name'\n - Expected: 'str'\n - Got: " + str(type(name))
+            assert isinstance(var, Variable), "While.addVar() 'var'\n - Expected: 'Variable'\n - Got: " + str(type(var))
+
+        self.vars[name] = var
+
+    def getVars(self) -> list:
+        return [self.vars]
+
 class Module(Scope):
     def __init__(self):
         self.vars = dict()
         self.code = dict()
-        self.parent_scope = None
+        self.parent = None
         self.name = None
+
+    def getVars(self) -> list:
+        return [self.vars]
 
     def parseTree(self, tree, printer) -> str:
         if __debug__:
