@@ -28,7 +28,7 @@ The parser code is in the .g4 file.
 
 ### Semantic Analysis
 
- - :x: Check if variable has already been declared.
+ - :white_check_mark: Check if variable has already been declared.
  - :x: Check if variable has been initialized when it is being used.
  - :white_check_mark: Check if the variable type is correct.
    - Variable type defaults to scalar, unless variable previously declared as array
@@ -46,6 +46,3 @@ The parser code is in the .g4 file.
 
 
 ## Questions
-
- - If there are no import statements are we supposed to assume that every call that does not correspond to a function call is a separate module?
- - Should the function not exists do we check the existence of the parameters?

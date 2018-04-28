@@ -188,6 +188,11 @@ class LeftOP(Statement):
 
         self.access.checkSemantics(printer, var_list, report_existance)
 
+    def isArrAccess(self) -> bool:
+        return isinstance(self.access, ArrayAccess)
+
+    def isArrSize(self) -> bool:
+        return isinstance(self.access, ScalarAccess) and self.access.size
 
 class RightOP(Statement):
     def __init__(self, node, parent):
@@ -254,8 +259,11 @@ class Assign(Statement):
 
         (var_name, var_info) = self.getVarInfo()
         existing_var = self.__varExists(var_name, var_list)
+
         if existing_var is not None:
-            if self.right.resultType() != existing_var.type:
+            if self.left.isArrSize():
+                printer.addError(self.line, self.cols, "Unknown operation", "Tried to assign a value to the 'size' of an array")
+            elif self.right.resultType() != existing_var.type and not self.left.isArrAccess():
                 printer.addError(self.line, self.cols, "Wrong assignment", "Tried to assign a '" + self.right.resultType() + "' to a '" + existing_var.type + "' variable")
         else:
             var_obj = None
@@ -294,7 +302,6 @@ class ArrayAccess(Statement):
             assert isinstance(report_existance, bool), "ArrayAccess.checkSemantics() 'report_existance'\n - Expected 'bool'\n - Got: " + str(type(report_existance))
 
         if not self.index.isdigit():
-            print("INDEX = " + self.index)
             index_var = getVar(self.index, var_list)
             if index_var is not None:
                 if not isinstance(index_var, NumberVariable):
@@ -307,8 +314,8 @@ class ArrayAccess(Statement):
         if var is not None:
             if not isinstance(var, ArrayVariable):
                 printer.addError(self.line, self.cols, "Indexing impossible", "Tried to index a variable of type '" + var.type + "', which is only possible with arrays")
-            elif self.index.isdigit() and not var.validAccess(self.index):
-                printer.addError(self.line, self.cols, "Out of bounds", "Tried to index position " + self.index + " when array only has " + var.size + " positions")
+            elif self.index.isdigit() and not var.validAccess(int(self.index)):
+                printer.addError(self.line, self.cols, "Out of bounds", "Tried to index position " + self.index + " when array only has " + str(var.size) + " positions\n ---> (Index starts at 0)")
         elif report_existance:
             printer.addError(self.line, self.cols, "Variable undefined", "Could not find '" + self.var + "' in current scope!")
 

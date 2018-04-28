@@ -30,15 +30,16 @@ class ErrorPrinter:
 
         error_message = ""
 
-        err_txt = self.lines[line-1]
-
+        (err_txt, del_spaces) = ErrorPrinter.__cropString(self.lines[line-1])
         error_message += "\n" + BOLD + simple_msg + RESET + " -> " + UNDERLINE + "(" + str(line) + ":" + str(col[0]) + ")\n" + RESET
         error_message += " " + err_txt + "\n"
 
         print("LINE = " + str(line) + ", COL[0] = " + str(col[0]) + ", COL[1] = " + str(col[1]) + ", len = " + str(len(err_txt)))
 
+        col_start = col[0] - del_spaces
+        col_end = col[1] - del_spaces
         for i in range(-1, len(err_txt)):
-            if (i >= col[0] and i <= col[1]):
+            if (i >= col_start and i <= col_end):
                 error_message += RED + "^"
             else:
                 error_message += " "
@@ -47,6 +48,14 @@ class ErrorPrinter:
 
         self.errors.append(error_message)
 
+
+    def __cropString(string: str) -> (str, int):
+        ltrim = string.lstrip()
+        left_trimmed = len(string) - len(ltrim)
+
+        alltrim = ltrim.strip()
+
+        return (alltrim, left_trimmed)
 
     def addWarning(self, line, col, simple_msg, detail_msg):
         if __debug__:
