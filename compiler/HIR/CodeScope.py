@@ -257,50 +257,79 @@ class Module(Scope):
                 if ret is not None:
                     return ret
 
-    # Returns tuple with (<var_name>, <variable_instance>)
-    # Need to check if var_name already exists!
+    # TODO omg this function smells soooo baaaddd
     def __parseDeclaration(self, node, printer) -> (str,Variable):
         from .Stmt import ScalarAccess
         if __debug__:
             assert isinstance(node, yalParser.DeclarationContext), "Module.__parseDeclaration() 'node'\n - Expected: 'yalParser.DeclarationContext'\n - Got: " + str(type(node))
 
-        if node is None:
-            return;
-        only_name = len(node.children) is 1
-
-        # TODO check what happens when node.children[0] is a array_element
         var_name = str(node.children[0].children[0])
+        only_name = len(node.children) is 1
+        line = node.getLine()
+        cols = node.getColRange()
+        var = None
+
+        if var_name in self.vars:
+            var = self.vars[var_name]
+
+
         if only_name: # Only variable name
-            return (var_name, NumberVariable(var_name, None, node.getLine(), node.getColRange()[0]))
+            if var is not None:
+                printer.addWarning(line, cols, "Variable already defined", "Ignoring this line of code")
+
+            return (var_name, NumberVariable(var_name, None, (line, cols[0]), None))
+
         elif str(node.children[1]).isdigit(): # Constant declaration?
-            if var_name in self.vars:
-                var = self.vars[var_name]
-                if not isinstance(var, NumberVariable):
-                    printer.addError(node.getLine(), node.getColRange(), "Wrong assignment", "Assigned 'NUM' to '" + var.type + "' variable")
-            return (var_name, NumberVariable(var_name, int(str(node.children[1])), node.getLine(), node.getColRange()[0]))
+            if var is not None and not isinstance(var, NumberVariable):
+                printer.addError(line, cols, "Wrong assignment", "Assigned 'NUM' to '" + var.type + "' variable")
+
+            value = int(str(node.children[1]))
+            return (var_name, NumberVariable(var_name, value, (line, cols[0]), (line, cols[0])))
+
         else:
-            size_access = node.children[1].children[0]
-
-            if not isinstance(size_access, yalParser.Scalar_accessContext):
-                return (var_name, ArrayVariable(var_name, int(str(size_access)), node.getLine(), node.getColRange()[0]))
-
+            arr_size = node.children[1].children[0]
+            if not isinstance(var, ArrayVariable) and var is not None:
+                printer.addError(line, cols, "Invalied assignment", "Assigned 'ARR' to '" + var.type + "' variable")
+                return (var_name, None)
             else:
-                size_access = ScalarAccess(size_access, self)
-                size = 0
-                if size_access.var in self.vars:
-                    var = self.vars[size_access.var]
-                    if not isinstance(var, NumberVariable):
-                        if size_access.size:
-                            size = var.size
+                if isinstance(arr_size, yalParser.Scalar_accessContext):
+                    size_var_info = ScalarAccess(arr_size, self)
+                    size_var_info.checkSemantics(printer, [self.vars])
+
+                    if size_var_info.var in self.vars:
+                        size_var = self.vars[size_var_info.var]
+                        if size_var_info.size:
+                            if isinstance(size_var, ArrayVariable):
+                                if var is not None:
+                                    var.size = size_var.size
+                                else:
+                                    return (var_name, ArrayVariable(var_name, size_var.size, (line, cols[0]), (line, cols[0])))
+                            else:
+                                printer.addError(line, cols, "Invalid access", "Tried to access 'size' element of non array variable '" + size_var_name + "'")
                         else:
-                            printer.addError(node.getLine(), node.getColRange(), "Unknown array size", "'" + var.type + "' used instead of 'NUM' as array size")
+                            if isinstance(size_var, NumberVariable):
+                                if var is not None:
+                                    var.size = size_var.value
+                                else:
+                                    return (var_name, ArrayVariable(var_name, size_var.value, (line, cols[0]), (line, cols[0])))
+                            else:
+                                printer.addError(line, cols, "Unknown operation", "Creating array size from an 'ARR' variable!\n - Maybe you mean '" + size_var_info.var + ".size'")
+                                return (var_name, ArrayVariable(var_name, -1, (line, cols[0]), (line, cols[0])))
 
                     else:
-                        size = var.value
-                else:
-                    printer.addError(node.getLine(), node.getColRange(), "Undefined variable", "Variable '" + var_name + "' is not defined")
+                        printer.addError(line, cols, "Undefined variable", "Variable '" + size_var_name + "' is not defined")
+                    return (var_name, ArrayVariable(var_name, -1, (line, cols[0]), (line, cols[0])))
 
-                return (var_name, ArrayVariable(var_name, size, node.getLine(), node.getColRange()[0]))
+                else:
+                    if var is not None:
+                        if isinstance(var, ArrayVariable):
+                            var.size = int(str(arr_size))
+                        else:
+                            printer.addError(line, cols, "Variable reassign", "Tried reassigning a variable from '" + var.type + "' to 'ARR'")
+                    else:
+                        return (var_name, ArrayVariable(var_name, int(str(arr_size)), (line, cols[0]), (line, cols[0])))
+
+        return (var_name, None)
 
     def __parseFunction(self, node) -> (str, Function):
         if __debug__:
@@ -333,7 +362,7 @@ class Module(Scope):
     def __addVariable(self, var_name, var_info):
         if __debug__:
             assert isinstance(var_name, str), "Module.__addVariable() 'var_name'\n - Expected: 'str'\n - Got: " + str(type(var_name))
-            assert isinstance(var_info, Variable), "Module.__addVariable() 'var_info'\n - Expected: 'Variable'\n - Got: " + str(type(var_info))
+            assert (isinstance(var_info, Variable) or var_info is None), "Module.__addVariable() 'var_info'\n - Expected: 'Variable'\n - Got: " + str(type(var_info))
 
         if var_name in self.vars:
             return
