@@ -44,20 +44,35 @@ class Scope:
         ret.insert(-1, temp.getVars())
         return ret
 
+    def getFuncs(scope) -> dict:
+        if __debug__:
+            assert isinstance(scope, Scope) or scope is None, "Scope.getVars() 'scope'\n - Expected: 'Scope'\n - Got: " + str(type(ret_var))
+
+        temp = scope
+        while temp.parent is not None:
+            temp = temp.parent
+
+        return temp.code
+
 
 # 20 maças, cortar laminadas ++ fino, marshmallows 1 por cada pessoa (+- 100), espeto para por marshmallows (dar para pelos menos 15),
 
 class Function(Scope):
     def __init__(self, ret_var, args , stmts , parent):
         if __debug__:
-            assert isinstance(ret_var, str) or ret_var is None, "Function.__init__() 'ret_var'\n - Expected: 'str'\n - Got: " + str(type(ret_var))
+            assert isinstance(ret_var, ParserRuleContext) or ret_var is None, "Function.__init__() 'ret_var'\n - Expected: 'ParserRuleContext'\n - Got: " + str(type(ret_var))
             assert isinstance(args, yalParser.Var_listContext) or args is None, "Function.__init__() 'args'\n - Expected: 'yalParser.Var_listContext'\n - Got: " + str(type(args))
             assert isinstance(stmts, yalParser.Stmt_listContext), "Function.__init__() 'stmts'\n - Expected: 'yalParser.Stmt_listContext'\n - Got: " + str(type(stmts))
             assert isinstance(parent, Scope), "Function.__init__() 'parent'\n - Expected: 'Scope'\n - Got: " + str(type(parent))
 
-        self.ret_var = ret_var
-        self.ret_is_arr = False
         self.vars = [[], dict()] #[<arguments>, <local_variables>]
+        if ret_var is not None:
+            self.ret_var = ret_var.children[0]
+            self.ret_is_arr = isinstance(ret_var, yalParser.Array_elementContext)
+            self.vars[1][self.ret_var] = (ArrayVariable(self.ret_var, None, 0, None) if self.ret_is_arr else NumberVariable(self.ret_var, None, 0, None))
+        else:
+            self.ret_var = None
+
         self.code = []
         self.parent = parent
         if args is not None:
@@ -307,7 +322,7 @@ class Module(Scope):
         stmts = node.children[-1]
 
         if isinstance(node.children[1], tree.Tree.TerminalNodeImpl): # Check if function has a return variable
-            ret_var = str(node.children[0])
+            ret_var = node.children[0]
             func_name = str(node.children[1])
 
         if not isinstance(node.children[-2], tree.Tree.TerminalNodeImpl): # Check if function has arguments

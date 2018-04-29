@@ -23,6 +23,7 @@ OUT_OF_BOUNDS = "Out of bounds"
 NUM_SIZE = "NUM has no size"
 NEG_SIZE = "Negative array size"
 FUNC_REDECLARED = "Function redeclared"
+WRONG_ARGS = "Wrong arguments"
 
 ALREADY_DEF = "Variable already defined"
 
@@ -86,8 +87,6 @@ class ErrorPrinter:
         warn_msg += "\n" + UNDERLINE + simple_msg + RESET + " -> (" + str(line) + ":" + str(col[0]) + ")\n" + RESET
         warn_msg += " " + err_txt + "\n"
 
-        print("LINE = " + str(line) + ", COL[0] = " + str(col[0]) + ", COL[1] = " + str(col[1]) + ", len = " + str(len(err_txt)))
-
         for i in range(-1, len(err_txt)):
             if (i >= col[0] and i <= col[1]):
                 warn_msg += GREEN + "^"
@@ -96,6 +95,18 @@ class ErrorPrinter:
 
         warn_msg += RESET + "\n - " + detail_msg + RESET
         self.warnings.append(warn_msg)
+
+    def __readyArgs(self, func_name, args) -> str:
+        args_msg = func_name + "("
+        remove = False
+        for arg in args:
+            remove = True
+            args_msg += arg.type + ", "
+        if remove:
+            args_msg = args_msg[:-2]
+        args_msg += ")"
+
+        return args_msg
 
     #Prints the error messages and clears the error array
     def printMessages(self):
@@ -166,6 +177,15 @@ class ErrorPrinter:
 
     def arrSizeFromArr(self, line, cols, name):
         self.__addError(line, cols, UNKNOWN_OP, "Used variable '" + name + "' which is of type 'ARR', as array size!" + ErrorPrinter.__suggestion("Maybe you mean '" + name +  ".size'"))
+
+    def opDiffTypes(self, line, cols, var1_type, op, var2_type):
+        self.__addError(line, cols, UNKNOWN_OP, "Applying operator '" + op + "' between '" + var1_type + "' and '" + var2_type + "' is not possible!")
+
+    def wrongArgs(self, line, cols, func_name, expected, got):
+        expected_msg = self.__readyArgs(func_name, expected)
+        got_msg = self.__readyArgs(func_name, got)
+
+        self.__addError(line, cols, WRONG_ARGS, "Expected: " + expected_msg + "\n - Got: " + got_msg)
 
     # ----- WARNING MESSAGES ----
 

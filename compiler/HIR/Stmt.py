@@ -45,31 +45,6 @@ def getVar(var_name, vars_list) -> Variable:
     else:
         return var_name
 
-def expectedGot(func_name, gotten, expected) -> str:
-    if __debug__:
-        assert isinstance(func_name, str), "Stmt.expectedGot() 'func_name'\n - Expected 'str'\n - Got: " + str(type(func_name))
-        assert isinstance(gotten, list), "Stmt.expectedGot() 'gotten'\n - Expected 'list'\n - Got: " + str(type(gotten))
-        assert isinstance(expected, list), "Stmt.expectedGot() 'expected'\n - Expected 'list'\n - Got: " + str(type(expected))
-
-    ret = "Expected " + func_name + "("
-    remove = False
-    for var in expected:
-        remove = True
-        ret += var.type + ", "
-    if remove:
-        ret = ret[:-2]
-    ret += ") got " + func_name + "("
-
-    remove = False
-    for var in gotten:
-        remove = True
-        ret += var.type + ", "
-    if remove:
-        ret = ret[:-2]
-
-    ret += ")"
-    return ret
-
 class Statement:
     def __init__(self, node, parent):
         if __debug__:
@@ -89,16 +64,17 @@ class Call(Statement):
             assert isinstance(node, yalParser.CallContext), "Call.__init__() 'node'\n - Expected 'yalParser.CallContext'\n - Got: " + str(type(node))
             assert isinstance(parent, Scope), "Call.__init__() 'parent'\n - Expected 'Scope'\n - Got: " + str(type(mod_funcs))
 
-        self.module_functions = Scope.getFunctions(parent)
+        self.funcs = Scope.getFuncs(parent)
         self.calls = node.children[0]
         self.args = []
         for arg in node.children[1].children:
             self.args.append(arg)
 
 
-    def __checkArguments(self, func_name: str, func_called, call_vars) -> str:
+    def __checkArguments(self, printer, func_name, func_called, call_vars):
         from . import CodeScope
         if __debug__:
+            assert isinstance(printer, ErrorPrinter), "Call.__checkArguments() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
             assert isinstance(func_name, str), "Call.__checkArguments() 'func_name'\n - Expected 'str'\n - Got: " + str(type(func_name))
             assert isinstance(func_called, CodeScope.Function), "Call.__checkArguments() 'func_called'\n - Expected 'CodeScope.Function'\n - Got: " + str(type(func_called))
             assert isinstance(call_vars, list), "Call.__checkArguments() 'call_vars'\n - Expected 'list'\n - Got: " + str(type(call_vars))
@@ -108,11 +84,10 @@ class Call(Statement):
 
         if len(call_vars) is len(func_called.vars[0]):
             for i in range(len(call_vars)):
-                wrong = (wrong or (call_vars[i] != func_called.vars[0][i]))
+                wrong = (wrong or (call_vars[i] != func_args[i]))
 
         if wrong:
-            return expectedGot(func_name, call_vars, func_args)
-        return None;
+            return printer.wrongArgs(self.line, self.cols, func_name, func_args, call_vars)
 
     def checkSemantics(self, printer, var_list):
         if __debug__:
@@ -126,25 +101,37 @@ class Call(Statement):
 
         #Check if function exists
         if not mod_call:
-            if func_name not in self.module_functions:
+            if func_name not in self.funcs:
                 printer.undefFunc(self.line, self.col, func_name)
             else:
-                func_called = self.module_functions[func_name]
+                func_called = self.funcs[func_name]
                 func_exists = True
 
         call_vars = []
         for arg_name in self.args:
             arg = getVar(str(arg_name), var_list)
             if arg is not None:
+                if not isinstance(arg, str):
+                    print("NAME = " + arg.name + ", ARG TYPE = " + arg.type)
                 call_vars.append(arg)
             else:
-                printer.undefVar(self.line, self.col, str(arg_name))
+                printer.undefVar(self.line, self.cols, str(arg_name))
                 call_vars.append(UndefinedVariable())
 
         if func_exists:
-            msg = self.__checkArguments(func_name, func_called, call_vars)
-            if msg is not None:
-                errors.append(msg)
+            self.__checkArguments(printer, func_name, func_called, call_vars)
+
+    def returnType(self) -> str:
+        if len(self.calls) is 1:
+            func = self.funcs[str(self.calls[0])]
+            if func.ret_is_arr:
+                return "ARR"
+            else:
+                return "NUM"
+
+        else:
+            return "???"
+
 
 class ExprTest(Statement):
     def __init__(self, node, parent):
@@ -165,8 +152,18 @@ class ExprTest(Statement):
         self.left.checkSemantics(printer, var_list, True)
         self.right.checkSemantics(printer, var_list)
 
-        if self.left.isArr(var_list) and self.right.isArr(var_list):
-            printer.unknownComp(self.line, self.cols, self.left.access.var, str(self.op), self.right.value[0].value.var)
+        is_arr = self.left.isArr(var_list)
+        right_type = self.right.getType(var_list)
+        if right_type is None:
+            printer.opDiffTypes(self.line, self.cold, ('ARR' if is_arr else 'NUM'), self.op, '???')
+        else:
+            if is_arr and right_type == 'ARR':
+                printer.unknownComp(self.line, self.cols, self.left.access.var, str(self.op), self.right.value[0].value.var)
+            elif (not is_arr and right_type == 'ARR') or (is_arr and right_type == 'NUM'):
+                printer.opDiffTypes(self.line, self.cold, ('ARR' if is_arr else 'NUM'), self.op, right_type)
+
+
+
 
 class LeftOP(Statement):
     def __init__(self, node, parent):
@@ -226,12 +223,6 @@ class RightOP(Statement):
             self.needs_op = True
             self.arr_size = False
 
-    def resultType(self) -> str:
-        if self.arr_size: #TODO need to check function return
-            return "ARR"
-        else:
-            return "NUM"
-
     def checkSemantics(self, printer, var_list):
         if __debug__:
             assert isinstance(printer, ErrorPrinter), "RightOP.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
@@ -240,12 +231,43 @@ class RightOP(Statement):
         for term in self.value:
             term.checkSemantics(printer, var_list)
 
-        if self.needs_op and self.value[0].isArray(var_list) and self.value[1].isArray(var_list):
-            printer.unknownOp(self.line, self.cols, self.value[0].getVarName(), self.operator, self.value[1].getVarName())
+        if self.needs_op:
+            type1 = self.value[0].getType(var_list)
+            type2 = self.value[1].getType(var_list)
+            if type1 == 'ARR' and type2 == 'ARR':
+                printer.unknownOp(self.line, self.cols, self.value[0].getVarName(), self.operator, self.value[1].getVarName())
 
+            elif type1 != type2 or type1 == "???" or type2 == '???':
+                printer.opDiffTypes(self.line, self.cols, type1, self.operator, type2)
 
     def isArr(self, var_list) -> bool:
         return len(self.value) is 1 and self.value[0].isArray(var_list)
+
+    def getType(self, var_list) -> str:
+        if __debug__:
+            assert isinstance(var_list, list), "RightOP.getType() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
+
+        if self.arr_size:
+            return None
+        elif not self.needs_op:
+            return self.value[0].getType(var_list)
+        else:
+            type1 = self.value[0].getType(var_list)
+            type2 = self.value[1].getType(var_list)
+            if type1 == 'NUM' and type2 == 'NUM':
+                return 'NUM'
+            else:
+                return '???'
+
+    def getArrSize(self, var_list) -> int:
+        if __debug__:
+            assert isinstance(var_list, list), "RightOP.getArrSize() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
+
+        if self.arr_size:
+            return self.value[0].getValue(var_list)
+        else:
+            return -1
+
 
 class Assign(Statement):
     def __init__(self, node, parent):
@@ -261,9 +283,6 @@ class Assign(Statement):
     def getVarInfo(self):
         return (self.left.access.var, self.left.access);
 
-    def isAssignArray(self):
-        return self.right.arr_size;
-
     def checkSemantics(self, printer, var_list):
         if __debug__:
             assert isinstance(printer, ErrorPrinter), "Assign.checkSemantics() 'printer'\n - Expected: 'ErrorPrinter'\n - Got: " + str(type(printer))
@@ -273,18 +292,22 @@ class Assign(Statement):
         self.right.checkSemantics(printer, var_list)
 
         (var_name, var_info) = self.getVarInfo()
-        existing_var = self.__varExists(var_name, var_list)
+        var = getVar(var_name, var_list)
 
-        if existing_var is not None:
+        if var is not None:
+            right_type = self.right.getType(var_list)
             if self.left.isArrSize():
                 printer.sizeAssign(self.line, self.cols, self.left.access.var, 100) #TODO turn right_op into str
-            elif self.right.resultType() != existing_var.type and not self.left.isArrAccess():
-                printer.diffTypes(self.line, self.cols, existing_var.name, existing_var.type, self.right.resultType())
+            elif right_type != var.type and not self.left.isArrAccess() and not right_type == '???':
+                printer.diffTypes(self.line, self.cols, var.name, var.type, right_type)
         else:
             var_obj = None
             # TODO add array size and number value
-            if self.isAssignArray():
-                var_obj = ArrayVariable(var_name, 0, (self.line, self.cols[0]), (self.line, self.cols[0]))
+
+            right_type = self.right.getType(var_list)
+            if right_type == 'ARR' or right_type is None:
+                arr_size = self.right.getArrSize(var_list)
+                var_obj = ArrayVariable(var_name, arr_size, (self.line, self.cols[0]), (self.line, self.cols[0]))
             else:
                 var_obj = NumberVariable(var_name, 0, (self.line, self.cols[0]), (self.line, self.cols[0]))
             self.parent.addVar(var_name, var_obj)
@@ -363,6 +386,22 @@ class ScalarAccess(Statement):
         elif report_existance:
             printer.undefVar(self.line, self.cols, self.var)
 
+    def getValue(self, var_list) -> int:
+        if __debug__:
+            assert isinstance(var_list, list), "ScalarAccess.getValue() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
+
+        var = getVar(self.var, var_list)
+        if self.size:
+            if isinstance(var, ArrayVariable):
+                return var.size
+            else:
+                return -1
+        else:
+            if isinstance(var, NumberVariable):
+                return var.value
+            else:
+                return -1
+
 class ArraySize(Statement):
     def __init__(self, node, parent):
         super(ArraySize, self).__init__(node, parent)
@@ -390,6 +429,11 @@ class ArraySize(Statement):
         elif self.value < 0:
             printer.negSize(self.line, self.col, self.value)
 
+    def getValue(self, var_list) -> int:
+        if self.access:
+            return self.value.getValue(var_list)
+        else:
+            return self.value
 
 class Term(Statement):
     def __init__(self, node, parent):
@@ -419,6 +463,20 @@ class Term(Statement):
             self.value = int(str(child))
         else:
             print("HMMMMMMMMMMMMM?!!?!")
+
+    def getType(self, var_list) -> str:
+        if isinstance(self.value, Call):
+            return self.value.returnType()
+        elif isinstance(self.value, ArrayAccess):
+            return "NUM"
+        elif isinstance(self.value, ScalarAccess):
+            var = getVar(self.value.var, var_list)
+            if self.value.size:
+                return "NUM"
+            else:
+                return var.type
+        else:
+            return 'NUM'
 
     def isSize(self) -> bool:
         if isinstance(self.value, ScalarAccess):

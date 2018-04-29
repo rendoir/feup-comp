@@ -20,9 +20,9 @@ module program1 {
 
   function main() {
     vars = [2];
-    varss = [1];
+    varss = det(vars, vars, N);
     varsss = 2;
-    det(vars, varss, varsss);
+    det(varss, vars, varsss);
     io.println("max: ", mx);
     io.println("min: ", mn);
   }
