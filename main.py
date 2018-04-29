@@ -26,7 +26,9 @@ def main(argv):
     module = Module()
     module.parseTree(tree, printer)
     module.semanticCheck(printer)
-    printer.printMessages()
+
+    if not printer.printMessages():
+        pass # Generate code
 
 if __name__ == '__main__':
     main(sys.argv)

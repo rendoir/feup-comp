@@ -85,10 +85,12 @@ class yalParserListener(yalListener):
         if valid(ctx, 2):
             del ctx.children[1]
 
+    # Holds [<stmt_list>]
     def exitElse_yal(self, ctx:yalParser.Else_yalContext):
         if valid(ctx, 4):
-            del ctx.children[1]
-            del ctx.children[2]
+            del ctx.children[-1]
+            del ctx.children[-2]
+            del ctx.children[0]
 
     # Holds [<operator> <operator>]
     def exitAssign(self, ctx:yalParser.AssignContext):

@@ -1,4 +1,4 @@
-from .Variable import Variable, NumberVariable, ArrayVariable
+from .Variable import Variable, NumberVariable, ArrayVariable, UndefinedVariable
 from compiler.Printer import ErrorPrinter
 from antlr4 import tree
 from antlr_yal import *
@@ -12,6 +12,7 @@ class Scope:
 
         self.vars = {}
         self.code = []
+        self.branched_vars = {}
         self.parent = parent
 
     def addVar(self, name, var):
@@ -59,6 +60,7 @@ class Scope:
 
 class Function(Scope):
     def __init__(self, ret_var, args , stmts , parent):
+        super(Function, self).__init__(parent)
         if __debug__:
             assert isinstance(ret_var, ParserRuleContext) or ret_var is None, "Function.__init__() 'ret_var'\n - Expected: 'ParserRuleContext'\n - Got: " + str(type(ret_var))
             assert isinstance(args, yalParser.Var_listContext) or args is None, "Function.__init__() 'args'\n - Expected: 'yalParser.Var_listContext'\n - Got: " + str(type(args))
@@ -73,8 +75,6 @@ class Function(Scope):
         else:
             self.ret_var = None
 
-        self.code = []
-        self.parent = parent
         if args is not None:
             self.__addArgs(args)
 
@@ -122,10 +122,10 @@ class Function(Scope):
         string += ")\n"
         return string
 
-    def checkVariables(self, printer):
+    def checkSemantics(self, printer):
         from . import Stmt
         if __debug__:
-            assert isinstance(printer, ErrorPrinter), "Function.checkVariables() 'printer'\n - Expected: 'ErrorPrinter'\n - Got: " + str(type(printer))
+            assert isinstance(printer, ErrorPrinter), "Function.checkSemantics() 'printer'\n - Expected: 'ErrorPrinter'\n - Got: " + str(type(printer))
 
         for code_chunk in self.code:
             var_list = [self.vars[1], self.vars[0], self.parent.vars]
@@ -133,29 +133,47 @@ class Function(Scope):
 
 class If(Scope):
     def __init__(self, node, parent):
+        from . import Stmt
+        super(If, self).__init__(parent)
         if __debug__:
             assert isinstance(node, yalParser.If_yalContext), "If.__init__() 'node'\n - Expected: 'yalParser.If_yalContext'\n - Got: " + str(type(node))
             assert isinstance(parent, Scope), "If.__init__() 'parent'\n - Expected: 'Scope'\n - Got: " + str(type(parent))
 
-        self.parent = parent
-        self.test = ExprTest(node.children[0])
-        self.vars = dict()
-        self.code = []
-        stmts = node.children[1]
-        for stmt in stmts.children:
-            self.code.append(parseStmt(stmt, self))
-
+        self.line = node.getLine()
+        self.cols = node.getColRange()
+        self.checking_else = False
+        self.test = Stmt.ExprTest(node.children[0], self)
         self.else_code = []
+
+        for stmt in node.children[1].children:
+            self.code.append(Stmt.parseStmt(stmt, self))
+
         if node.getChildCount() is 3:
-            for stmt in node.children[2].children:
-                self.else_code.append(parseStmt(stmt, self))
+            for stmt in node.children[2].children[0].children:
+                self.else_code.append(Stmt.parseStmt(stmt, self))
 
     def addVar(self, name, var):
         if __debug__:
             assert isinstance(name, str), "If.addVar() 'name'\n - Expected: 'str'\n - Got: " + str(type(name))
             assert isinstance(var, Variable), "If.addVar() 'var'\n - Expected: 'Variable'\n - Got: " + str(type(var))
 
-        self.vars[name] = var
+        if name in self.vars:
+            existing_var = self.vars[name]
+            print("Checking else = " + str(self.checking_else))
+            if self.checking_else:
+                if not existing_var.type != var.type:
+                    if existing_var.type == 'ARR':
+                        var_obj = ArrayVariable(name, (-1 if existing_var.size != var.size else var.size), (self.line, self.cols[0]), (self.line, self.cols[0]))
+                    else:
+                        var_obj = NumberVariable(name, (-1 if existing_var.value != var.value else var.value), (self.line, self.cols[0]), (self.line, self.cols[0]))
+
+                    self.parent.addVar(name, var_obj)
+                else:
+                    self.parent.branched_vars[name] = UndefinedVariable(name, None, None, None)
+                    print("'" + name + "' in both branches but different types :-(")
+
+        else:
+            self.vars[name] = var
 
     def getVars(self) -> list:
         return [self.vars]
@@ -166,25 +184,27 @@ class If(Scope):
             assert isinstance(var_list, list), "If.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
 
         self.test.checkSemantics(printer, var_list)
-        vars = Scope.getVars(self)
-        for code_line in self.body:
-            code_line.checkSemantics(printer, vars)
+
+        for code_line in self.code:
+            code_line.checkSemantics(printer, var_list + [self.vars])
+
+        self.checking_else = True
+        for code_line in self.else_code:
+            code_line.checkSemantics(printer, var_list + [{}])
 
 class While(Scope):
     def __init__(self, node, parent):
         from . import Stmt
+        super(While, self).__init__(parent)
         if __debug__:
             assert isinstance(node, yalParser.While_yalContext), "While.__init__() 'node'\n - Expected: 'yalParser.While_yalContext'\n - Got: " + str(type(node))
             assert isinstance(parent, Scope), "While.__init__() 'parent'\n - Expected: 'Scope'\n - Got: " + str(type(parent))
 
         self.line = node.getLine()
         self.cols = node.getColRange()
-        self.parent = parent
         self.test = Stmt.ExprTest(node.children[0], parent)
-        self.body = []
-        self.vars = dict()
         for stmt in node.children[1].children:
-            self.body.append(Stmt.parseStmt(stmt, self))
+            self.code.append(Stmt.parseStmt(stmt, self))
 
     def checkSemantics(self, printer, var_list):
         if __debug__:
@@ -193,7 +213,7 @@ class While(Scope):
 
         self.test.checkSemantics(printer, var_list)
         vars = Scope.getVars(self)
-        for code_line in self.body:
+        for code_line in self.code:
             code_line.checkSemantics(printer, vars)
 
     def addVar(self, name, var):
@@ -336,7 +356,7 @@ class Module(Scope):
             assert isinstance(printer, ErrorPrinter), "Module.semanticCheck() 'printer'\n - Expected: 'ErrorPrinter'\n - Got: " + str(type(printer))
 
         for name, func in self.code.items():
-            func.checkVariables(printer)
+            func.checkSemantics(printer)
 
     def __addVariable(self, var_name, var_info):
         if __debug__:

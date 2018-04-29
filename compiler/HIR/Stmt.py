@@ -163,8 +163,6 @@ class ExprTest(Statement):
                 printer.opDiffTypes(self.line, self.cold, ('ARR' if is_arr else 'NUM'), self.op, right_type)
 
 
-
-
 class LeftOP(Statement):
     def __init__(self, node, parent):
         super(LeftOP, self).__init__(node, parent)
@@ -290,10 +288,10 @@ class Assign(Statement):
 
         self.left.checkSemantics(printer, var_list, False)
         self.right.checkSemantics(printer, var_list)
-
         (var_name, var_info) = self.getVarInfo()
         var = getVar(var_name, var_list)
 
+        print("VAR = " + str(var))
         if var is not None:
             right_type = self.right.getType(var_list)
             if self.left.isArrSize():
@@ -470,6 +468,7 @@ class Term(Statement):
         elif isinstance(self.value, ArrayAccess):
             return "NUM"
         elif isinstance(self.value, ScalarAccess):
+            print("NAME = " + self.value.var)
             var = getVar(self.value.var, var_list)
             if self.value.size:
                 return "NUM"

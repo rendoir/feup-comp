@@ -109,7 +109,9 @@ class ErrorPrinter:
         return args_msg
 
     #Prints the error messages and clears the error array
-    def printMessages(self):
+    # Returns true if there was a semantic error
+    def printMessages(self) -> bool:
+        error = True
         print("--- BEGIN SEMANTIC ANALYZIS ---")
 
         for error in self.errors:
@@ -121,6 +123,7 @@ class ErrorPrinter:
         elif len(self.errors) > 1:
             final_msg += RED + "--- " + str(len(self.errors))  + " ERRORS "
         else:
+            error = False
             final_msg += " --- 0 ERRORS "
 
         for warning in self.warnings:
@@ -136,7 +139,7 @@ class ErrorPrinter:
         print("\n" + final_msg)
 
         self.errors[:] = []
-
+        return error
     # ----- ERROR MESSAGES -------
 
     def undefVar(self, line, cols, var_name):

@@ -32,11 +32,11 @@ The parser code is in the .g4 file.
  - :x: Check if variable has been initialized when it is being used.
  - :white_check_mark: Check if the variable type is correct.
    - Variable type defaults to scalar, unless variable previously declared as array
- - :x: Cannot reassign array size
+ - :white_check_mark: Cannot reassign array size
 
         var.size = 20; //Error
 
- - :x: Comparison between arrays is not possible
+ - :white_check_mark: Comparison between arrays is not possible
  - :white_check_mark: Check if type of arguments passed on function call is valid
  - :x: Branching declaration (variables declared/initialized within if/else must be checked)
 

@@ -10,7 +10,19 @@ module program1 {
    function a[]=det(d[], A[], b) {
     wtf = data + c;
     i = + 2;
-    M = d.size - 1; //d.size is the same as d.length (Java)
+    if (i == 2) {
+      variable1 = 1;
+    }
+    else {
+      if (N < 100) {
+        variable1 = 2;
+      }
+      else {
+        variable1 = 3;
+      }
+    }
+
+    M = d.size - variable1; //d.size is the same as d.length (Java)
     while (data < c) { // version not optimized
       a = d[i]; i=i+1; b=d[i];
       mx = library1.max(a, b);
