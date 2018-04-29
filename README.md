@@ -29,7 +29,7 @@ The parser code is in the .g4 file.
 ### Semantic Analysis
 
  - :white_check_mark: Check if variable has already been declared.
- - :x: Check if variable has been initialized when it is being used.
+ - :white_check_mark: Check if variable has been initialized when it is being used.
  - :white_check_mark: Check if the variable type is correct.
    - Variable type defaults to scalar, unless variable previously declared as array
  - :white_check_mark: Cannot reassign array size
@@ -46,3 +46,6 @@ The parser code is in the .g4 file.
 
 
 ## Questions
+  - How can a variable be not initialized when it is impossible in an assign to do something like this:
+
+        not_initialized_var;
