@@ -10,9 +10,19 @@ module program1 {
   mx;         // attribute mx
   mn;         // attribute mn
 
+  function main() {
+    vars = [2];
+    varss = det(vars, vars, N);
+    varsss = 2;
+    det(varss, vars, varsss);
+    io.println("max: ", mx);
+    io.println("min: ", mn);
+  }
+
    function a[]=det(d[], A[], b) {
     wtf = data + c;  // Error 4 cant use 2 arrays
     i = + 2;
+    d.size = 256;
     if (i == 2) {
       variable1 = 1;
     }
@@ -27,13 +37,4 @@ module program1 {
       mn = library1.min(a, b);
     }
    }
-
-  function main() {
-    vars = [2];
-    varss = det(vars, vars, N);
-    varsss = 2;
-    det(varss, vars, varsss);
-    io.println("max: ", mx);
-    io.println("min: ", mn);
-  }
 }

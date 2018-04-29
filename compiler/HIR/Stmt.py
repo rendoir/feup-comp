@@ -71,6 +71,22 @@ class Call(Statement):
             self.args.append(arg)
 
 
+    def __str__(self) -> str:
+        ret = ""
+        for call in self.calls:
+            ret += str(call) + "."
+        ret = ret[:-1]
+        ret += "("
+        remove = False
+        for arg in self.args:
+            remove = True
+            ret += str(arg) + ", "
+        if remove:
+            ret = ret[:-2]
+
+        ret += ")"
+        return ret
+
     def __checkArguments(self, printer, func_name, func_called, call_vars):
         from . import CodeScope
         if __debug__:
@@ -265,6 +281,14 @@ class RightOP(Statement):
             return -1
 
 
+    def __str__(self) -> str:
+        if self.needs_op:
+            return str(self.value[0]) + " " + self.operator + " " + str(self.value[1])
+        else:
+            return str(self.value[0])
+
+
+
 class Assign(Statement):
     def __init__(self, node, parent):
         super(Assign, self).__init__(node, parent)
@@ -292,7 +316,7 @@ class Assign(Statement):
         if var is not None:
             right_type = self.right.getType(var_list)
             if self.left.isArrSize():
-                printer.sizeAssign(self.line, self.cols, self.left.access.var, 100) #TODO turn right_op into str
+                printer.sizeAssign(self.line, self.cols, self.left.access.var, str(self.right)) #TODO turn right_op into str
             elif right_type != var.type and not self.left.isArrAccess() and not right_type == '???':
                 printer.diffTypes(self.line, self.cols, var.name, var.type, right_type)
         else:
@@ -352,6 +376,9 @@ class ArrayAccess(Statement):
         elif report_existance:
             printer.undefVar(self.line, self.cols, self.var)
 
+    def __str__(self) -> str:
+        return self.var + "[" + self.index + "]"
+
 class ScalarAccess(Statement):
     def __init__(self, node, parent):
         super(ScalarAccess, self).__init__(node, parent)
@@ -362,6 +389,12 @@ class ScalarAccess(Statement):
 
         self.var = str(node.children[0])
         self.size = (len(node.children) is 2)
+
+    def __str__(self) -> str:
+        if self.size:
+            return self.var + ".size"
+        else:
+            return self.var
 
     def indexAccess(self):
         return None
@@ -413,6 +446,9 @@ class ArraySize(Statement):
             self.value = ScalarAccess(node.children[0], parent)
             self.access = True
 
+    def __str__(self) -> str:
+        return "[" + str(self.value) + "]"
+
     def isDigit(node: yalParser.Array_sizeContext):
         return str(node.children[0]).isdigit();
 
@@ -460,6 +496,12 @@ class Term(Statement):
             self.value = int(str(child))
         else:
             print("HMMMMMMMMMMMMM?!!?!")
+
+    def __str__(self) -> str:
+        if isinstance(self.value, int):
+            return str(self.value)
+        else:
+            return str(self.value)
 
     def getType(self, var_list) -> str:
         if isinstance(self.value, Call):
