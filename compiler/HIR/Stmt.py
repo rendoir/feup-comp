@@ -111,8 +111,6 @@ class Call(Statement):
         for arg_name in self.args:
             arg = getVar(str(arg_name), var_list)
             if arg is not None:
-                if not isinstance(arg, str):
-                    print("NAME = " + arg.name + ", ARG TYPE = " + arg.type)
                 call_vars.append(arg)
             else:
                 printer.undefVar(self.line, self.cols, str(arg_name))
@@ -291,7 +289,6 @@ class Assign(Statement):
         (var_name, var_info) = self.getVarInfo()
         var = getVar(var_name, var_list)
 
-        print("VAR = " + str(var))
         if var is not None:
             right_type = self.right.getType(var_list)
             if self.left.isArrSize():
@@ -378,7 +375,9 @@ class ScalarAccess(Statement):
         var = getVar(self.var, var_list)
 
         if var is not None:
-            if self.size and not isinstance(var, ArrayVariable):
+            if not var.initialized() and report_existance:
+                printer.notInitialized(self.line, self.cols, var.name)
+            elif self.size and not isinstance(var, ArrayVariable):
                 printer.numSize(self.line, self.cols, var.name, var.type)
 
         elif report_existance:
@@ -468,7 +467,6 @@ class Term(Statement):
         elif isinstance(self.value, ArrayAccess):
             return "NUM"
         elif isinstance(self.value, ScalarAccess):
-            print("NAME = " + self.value.var)
             var = getVar(self.value.var, var_list)
             if self.value.size:
                 return "NUM"

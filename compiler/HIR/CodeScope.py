@@ -98,9 +98,9 @@ class Function(Scope):
         children = args.getChildren()
         for child in children:
             if isinstance(child, yalParser.Array_elementContext):
-                self.vars[0].append(ArrayVariable(str(child.children[0]), None, 0, 0))
+                self.vars[0].append(ArrayVariable(str(child.children[0]), None, (0, 0), (0, 0)))
             else:
-                self.vars[0].append(NumberVariable(str(child.children[0]), None, 0, 0))
+                self.vars[0].append(NumberVariable(str(child.children[0]), None, (0, 0), (0, 0)))
 
 
     def __addStmts(self, stmts: List[yalParser.Stmt_listContext]):
@@ -159,7 +159,6 @@ class If(Scope):
 
         if name in self.vars:
             existing_var = self.vars[name]
-            print("Checking else = " + str(self.checking_else))
             if self.checking_else:
                 if not existing_var.type != var.type:
                     if existing_var.type == 'ARR':
@@ -264,6 +263,7 @@ class Module(Scope):
         from .Stmt import ScalarAccess
         if __debug__:
             assert isinstance(node, yalParser.DeclarationContext), "Module.__parseDeclaration() 'node'\n - Expected: 'yalParser.DeclarationContext'\n - Got: " + str(type(node))
+            assert isinstance(printer, ErrorPrinter), "Module.__parseDeclaration() 'printer'\n - Expected: 'ErrorPrinter'\n - Got: " + str(type(printer))
 
         var_name = str(node.children[0].children[0])
         only_name = len(node.children) is 1
@@ -288,14 +288,18 @@ class Module(Scope):
             return (var_name, NumberVariable(var_name, value, (line, cols[0]), (line, cols[0])))
 
         else:
+            # return self.__checkArrSize(var, var_name, node.children[1], printer)
+
             arr_size = node.children[1].children[0]
             if not isinstance(var, ArrayVariable) and var is not None:
                 printer.diffTypes(line, cols, var.name, var.type, 'ARR')
                 return (var_name, None)
             else:
                 if isinstance(arr_size, yalParser.Scalar_accessContext):
+                    # print("CHILDS = "  + str(node.children))
+                    # print("ARR SIZE = " + str(node.children[0].getLine()) + ", cols = " + str(node.children[0].getColRange()))
                     size_var_info = ScalarAccess(arr_size, self)
-                    size_var_info.checkSemantics(printer, [self.vars])
+                    size_var_info.checkSemantics(printer, [self.vars], True)
 
                     if size_var_info.var in self.vars:
                         size_var = self.vars[size_var_info.var]
@@ -331,6 +335,59 @@ class Module(Scope):
                         return (var_name, ArrayVariable(var_name, int(str(arr_size)), (line, cols[0]), (line, cols[0])))
 
         return (var_name, None)
+
+    def __checkArrSize(self, var, var_name, node, printer) -> (str, Variable):
+        from .Stmt import ScalarAccess
+        if __debug__:
+            assert (isinstance(var, Variable) or var is None), "Module.__checkArrSize() 'var'\n - Expected: 'Variable'\n - Got: " + str(type(var))
+            assert isinstance(var_name, str), "Module.__checkArrSize() 'var_name'\n - Expected: 'str'\n - Got: " + str(type(var_name))
+            assert isinstance(node, yalParser.Array_sizeContext), "Module.__checkArrSize() 'node'\n - Expected: 'yalParser.Array_sizeContext'\n - Got: " + str(type(node))
+            assert isinstance(printer, ErrorPrinter), "Module.__checkArrSize() 'printer'\n - Expected: 'ErrorPrinter'\n - Got: " + str(type(printer))
+        line = node.getLine()
+        cols = node.getColRange()
+        arr_size = node.children[0]
+
+        if isinstance(var, ArrayVariable) or var is None:
+            if isinstance(arr_size, yalParser.Scalar_accessContext):
+                size_info = ScalarAccess(arr_size, self)
+                size_info.checkSemantics(printer, [self.vars])
+
+                if size_info.var in self.vars:
+                    size_var = self.vars[size_info.var]
+                    if size_info.size:
+                        if isinstance(size_var, ArrayVariable):
+                            if var is not None:
+                                var.size = size_var.size
+                            else:
+                                return (var_name, ArrayVariable(var_name, size_var.size, (line, cols[0]), (line, cols[0])))
+                        else:
+                            printer.numSize(line, cols, size_var_name, size_var.type)
+                    else:
+                        if isinstance(size_var, NumberVariable):
+                            if var is not None:
+                                var.size = size_var.value
+                            else:
+                                return (var_name, ArrayVariable(var_name, size_var.value, (line, cols[0]), (line, cols[0])))
+                        else:
+                            printer.arrSizeFromArr(line, cols, size_info.var)
+                            return (var_name, ArrayVariable(var_name, -1, (line, cols[0]), (line, cols[0])))
+                else:
+                    printer.undefVar(line, cols, size_var_name)
+
+                return (var_name, ArrayVariable(var_name, -1, (line, cols[0]), (line, cols[0])))
+
+            else:
+                if var is not None:
+                    if isinstance(var, ArrayVariable):
+                        var.size = int(str(arr_size))
+                    else:
+                        printer.diffTypes(line, cols, var.name, var.type, 'ARR')
+                else:
+                    return (var_name, ArrayVariable(var_name, int(str(arr_size)), (line, cols[0]), (line, cols[0])))
+
+        else:
+            printer.diffTypes(line, cols, var_name, var.type, 'ARR')
+            return (var_name, None)
 
     def __parseFunction(self, node) -> (str, Function):
         if __debug__:

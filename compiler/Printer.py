@@ -12,6 +12,7 @@ REVERSE     = "\033[;7m"
 UNDERLINE   = '\033[4m'
 
 UNDEFINED_VAR = "Undefined variable"
+NOT_INITIALIZED = "Variable not initialized"
 UNDEFINED_FUNC = "Undefined function"
 UNKNOWN_COMP = "Unknown comparison"
 UNKNOWN_OP = "Unknown operation"
@@ -144,6 +145,10 @@ class ErrorPrinter:
 
     def undefVar(self, line, cols, var_name):
         self.__addError(line, cols, UNDEFINED_VAR, "Variable " + var_name + " is not defined in scope")
+
+    def notInitialized(self, line, cols, var_name):
+        new_cols = (cols[0], cols[1] + len(var_name) - 1)
+        self.__addError(line, new_cols, NOT_INITIALIZED, "Variable '" + var_name + "' used before initialization")
 
     def undefFunc(self, line, cols, func_name):
         self.__addError(line, cols, UNDEFINED_FUNC, "Could not find '" + func_name + "' in current module!" + ErrorPrinter.__suggestion("Maybe it belongs to another module"))
