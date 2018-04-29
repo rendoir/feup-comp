@@ -19,7 +19,7 @@ class Variable:
         if __debug__:
             assert isinstance(other, Variable), "Variable.__ne__() 'other' should be 'Variable'"
 
-        return (self.type != other.type and (self.type != "???" and other.type != "???"))
+        return (self.type != other.type and self.type != "???" and other.type != "???")
 
 
     def isLiteral(var: str) -> bool:
@@ -65,4 +65,16 @@ class ArrayVariable(Variable):
 
 class UndefinedVariable(Variable):
     def __init__(self, name=None, size=None, decl=None, init=None):
-        super(UndefinedVariable, self).__init__(None, "???", None, None)
+        super(UndefinedVariable, self).__init__(None, "???", 0, 0)
+
+class BranchedVariable(Variable):
+    def __init__(self, name, type1, type2, decl=None, init=None):
+        super(BranchedVariable, self).__init__(name, "???", None, None)
+        self.reported = False
+        self.type1 = type1
+        self.type2 = type2
+
+    def wasReported(self):
+        self.reported = True
+        self.init = 0
+        self.decl = 0

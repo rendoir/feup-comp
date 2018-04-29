@@ -31,7 +31,7 @@ The parser code is in the .g4 file.
  - :white_check_mark: Check if variable has already been declared.
  - :white_check_mark: Check if variable has been initialized when it is being used.
  - :white_check_mark: Check if the variable type is correct.
-   - Variable type defaults to scalar, unless variable previously declared as array
+   - :white_check_mark: Variable type defaults to scalar, unless variable previously declared as array
  - :white_check_mark: Cannot reassign array size
 
         var.size = 20; //Error

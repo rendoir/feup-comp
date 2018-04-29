@@ -2,7 +2,7 @@ from antlr4 import ParserRuleContext, tree
 from antlr_yal import yalParser
 from pprint import pprint
 from typing import List
-from compiler.HIR.Variable import Variable, ArrayVariable, NumberVariable, UndefinedVariable
+from compiler.HIR.Variable import Variable, ArrayVariable, NumberVariable, UndefinedVariable, BranchedVariable
 from compiler.Printer import ErrorPrinter
 from .CodeScope import Scope
 
@@ -51,6 +51,7 @@ class Statement:
             assert isinstance(node, ParserRuleContext), "Statement.__init__() 'node'\n - Expected 'ParserRuleContext'\n - Got: " + str(type(node))
             assert isinstance(parent, Scope), "Statement.__init__() 'parent'\n - Expected 'Scope'\n - Got: " + str(type(mod_funcs))
 
+        self.parent = parent
         self.line = node.getLine()
         self.cols = node.getColRange()
 
@@ -118,19 +119,24 @@ class Call(Statement):
         #Check if function exists
         if not mod_call:
             if func_name not in self.funcs:
-                printer.undefFunc(self.line, self.col, func_name)
+                printer.undefFunc(self.line, self.cols, func_name)
             else:
                 func_called = self.funcs[func_name]
                 func_exists = True
 
         call_vars = []
         for arg_name in self.args:
+
             arg = getVar(str(arg_name), var_list)
             if arg is not None:
                 call_vars.append(arg)
             else:
-                printer.undefVar(self.line, self.cols, str(arg_name))
-                call_vars.append(UndefinedVariable())
+                if Scope.isBranchVar(self.parent, str(arg_name)):
+                    printer.branchingDecl(self.line, self.cols, str(arg_name))
+                    self.parent.debranchVar(str(arg_name))
+                else:
+                    printer.undefVar(self.line, self.cols, str(arg_name))
+                    call_vars.append(UndefinedVariable())
 
         if func_exists:
             self.__checkArguments(printer, func_name, func_called, call_vars)
@@ -249,7 +255,7 @@ class RightOP(Statement):
             if type1 == 'ARR' and type2 == 'ARR':
                 printer.unknownOp(self.line, self.cols, self.value[0].getVarName(), self.operator, self.value[1].getVarName())
 
-            elif type1 != type2 or type1 == "???" or type2 == '???':
+            elif type1 != type2 and type1 != "???" and type2 != '???':
                 printer.opDiffTypes(self.line, self.cols, type1, self.operator, type2)
 
     def isArr(self, var_list) -> bool:
@@ -364,7 +370,11 @@ class ArrayAccess(Statement):
                 if not isinstance(index_var, NumberVariable):
                     printer.arrSizeNaN(self.line, self.cols, var.type)
             else:
-                printer.undefVar(self.line, self.cols, self.index)
+                if Scope.isBranchVar(self.parent, self.index):
+                    printer.branchingDecl(self.line, self.cols, self.index)
+                    self.parent.debranchVar(self.index)
+                else:
+                    printer.undefVar(self.line, self.cols, self.index)
 
         var = getVar(self.var, var_list)
 
@@ -374,7 +384,11 @@ class ArrayAccess(Statement):
             elif self.index.isdigit() and not var.validAccess(int(self.index)):
                 printer.outOfBounds(self.line, self.cols, var.name, var.size, self.index)
         elif report_existance:
-            printer.undefVar(self.line, self.cols, self.var)
+            if Scope.isBranchVar(self.parent, self.var):
+                printer.branchingDecl(self.line, self.cols, self.var)
+                self.parent.debranchVar(self.var)
+            else:
+                printer.undefVar(self.line, self.cols, self.var)
 
     def __str__(self) -> str:
         return self.var + "[" + self.index + "]"
@@ -409,12 +423,24 @@ class ScalarAccess(Statement):
 
         if var is not None:
             if not var.initialized() and report_existance:
-                printer.notInitialized(self.line, self.cols, var.name)
+                if isinstance(var, BranchedVariable):
+                    print("TYPE 1 = " + var.type1)
+                    print("TYPE 2 = " + var.type2)
+                    printer.branchingVars(self.line, self.cols, self.var, var.type1, var.type2)
+                    var.wasReported()
+                else:
+                    printer.notInitialized(self.line, self.cols, self.var)
+
             elif self.size and not isinstance(var, ArrayVariable):
                 printer.numSize(self.line, self.cols, var.name, var.type)
 
         elif report_existance:
-            printer.undefVar(self.line, self.cols, self.var)
+            if Scope.isBranchVar(self.parent, self.var):
+                printer.branchingDecl(self.line, self.cols, self.var)
+                self.parent.debranchVar(self.var)
+            else:
+                printer.undefVar(self.line, self.cols, self.var)
+                self.parent.addVar(self.var, UndefinedVariable())
 
     def getValue(self, var_list) -> int:
         if __debug__:
@@ -460,7 +486,7 @@ class ArraySize(Statement):
         if self.access:
             self.value.checkSemantics(printer, var_list, True)
         elif self.value < 0:
-            printer.negSize(self.line, self.col, self.value)
+            printer.negSize(self.line, self.cols, self.value)
 
     def getValue(self, var_list) -> int:
         if self.access:

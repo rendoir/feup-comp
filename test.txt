@@ -3,10 +3,10 @@ module program1 {
   a[] = 1;
   cenas;
   N = 100;
-  c[] = [data]; //Error 1 cant use array as size
+  c[] = [data];       //Error 1 cant use array as size
   undef[] = [cenas];  //Error 2 cant use undefined (not initializd)
   undef2 = [cenas];   // Error 3 not initialized
-  N;
+  N;      // Warning variable already declared (no effect)
   mx;         // attribute mx
   mn;         // attribute mn
 
@@ -14,25 +14,33 @@ module program1 {
     vars = [2];
     varss = det(vars, vars, N);
     varsss = 2;
-    det(varss, vars, varsss);
+    cenas(varss, vars, varsss);   //Error 4 function does not exist
     io.println("max: ", mx);
     io.println("min: ", mn);
   }
 
    function a[]=det(d[], A[], b) {
-    wtf = data + c;  // Error 4 cant use 2 arrays
+    wtf = data + c;       // Error 5 cant use 2 arrays
     i = + 2;
-    d.size = 256;
+    d.size = 256;         // Error 6 cant assign size directly
     if (i == 2) {
       variable1 = 1;
     }
     else {
-      variable1 = 2;
+      if (i <= 10) {
+        variable1 = 2;
+      }
+      else {
+        variable2 = 3;
+      }
+      if (variable1 < 2) {      // Error 7 variable1 may not exist
+        library1.max(i, i);
+      }
     }
 
-    M = d.size - variable1;
-    while (data < c) { // Error 5 cant use 2 arrays
-      a = d[i]; i=i+1; b=d[i];
+    M = d.size - variable1;     // Error 8 variable1 may be 'ARR' or 'NUM'
+    while (data < c) {          // Error 9 cant use 2 arrays
+      a = d[i]; i=i+1; b=d[i];  // Error 10 cant assign number to a variable (a is an array)
       mx = library1.max(a, b);
       mn = library1.min(a, b);
     }

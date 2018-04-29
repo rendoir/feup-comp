@@ -1,4 +1,4 @@
-from .Variable import Variable, NumberVariable, ArrayVariable, UndefinedVariable
+from .Variable import Variable, NumberVariable, ArrayVariable, UndefinedVariable, BranchedVariable
 from compiler.Printer import ErrorPrinter
 from antlr4 import tree
 from antlr_yal import *
@@ -55,6 +55,23 @@ class Scope:
 
         return temp.code
 
+    def debranchVar(self, var_name):
+        temp_scope = self
+        while temp_scope.parent is not None:
+            if var_name in self.branched_vars:
+                del self.branched_vars[var_name]
+            temp_scope = temp_scope.parent
+
+        self.addVar(var_name, UndefinedVariable(var_name, None, 0, 0))
+
+    def isBranchVar(scope, var_name) -> bool:
+        temp_scope = scope
+        while temp_scope.parent is not None:
+            if var_name in temp_scope.branched_vars:
+                return True
+            temp_scope = temp_scope.parent
+
+        return False
 
 # 20 maças, cortar laminadas ++ fino, marshmallows 1 por cada pessoa (+- 100), espeto para por marshmallows (dar para pelos menos 15),
 
@@ -69,7 +86,7 @@ class Function(Scope):
 
         self.vars = [[], dict()] #[<arguments>, <local_variables>]
         if ret_var is not None:
-            self.ret_var = ret_var.children[0]
+            self.ret_var = str(ret_var.children[0])
             self.ret_is_arr = isinstance(ret_var, yalParser.Array_elementContext)
             self.vars[1][self.ret_var] = (ArrayVariable(self.ret_var, None, 0, None) if self.ret_is_arr else NumberVariable(self.ret_var, None, 0, None))
         else:
@@ -85,6 +102,9 @@ class Function(Scope):
         if __debug__:
             assert isinstance(name, str), "Function.addVar() 'name'\n - Expected: 'str'\n - Got: " + str(type(name))
             assert isinstance(var, Variable), "Function.addVar() 'var'\n - Expected: 'Variable'\n - Got: " + str(type(var))
+
+        if name in self.branched_vars:
+            del self.branched_vars[name]
 
         self.vars[1][name] = var
 
@@ -160,19 +180,21 @@ class If(Scope):
         if name in self.vars:
             existing_var = self.vars[name]
             if self.checking_else:
-                if not existing_var.type != var.type:
+                if not existing_var != var:
                     if existing_var.type == 'ARR':
                         var_obj = ArrayVariable(name, (-1 if existing_var.size != var.size else var.size), (self.line, self.cols[0]), (self.line, self.cols[0]))
                     else:
                         var_obj = NumberVariable(name, (-1 if existing_var.value != var.value else var.value), (self.line, self.cols[0]), (self.line, self.cols[0]))
 
+                    if name in self.branched_vars:
+                        del self.branched_vars[name]
                     self.parent.addVar(name, var_obj)
                 else:
-                    self.parent.branched_vars[name] = UndefinedVariable(name, None, None, None)
+                    self.parent.addVar(name, BranchedVariable(name, existing_var.type, var.type))
                     print("'" + name + "' in both branches but different types :-(")
-
         else:
             self.vars[name] = var
+            self.parent.branched_vars[name] = var
 
     def getVars(self) -> list:
         return [self.vars]
@@ -219,6 +241,9 @@ class While(Scope):
         if __debug__:
             assert isinstance(name, str), "While.addVar() 'name'\n - Expected: 'str'\n - Got: " + str(type(name))
             assert isinstance(var, Variable), "While.addVar() 'var'\n - Expected: 'Variable'\n - Got: " + str(type(var))
+
+        if name in self.branched_vars:
+            del self.branched_vars[name]
 
         self.vars[name] = var
 
@@ -414,6 +439,7 @@ class Module(Scope):
 
         for name, func in self.code.items():
             func.checkSemantics(printer)
+
 
     def __addVariable(self, var_name, var_info):
         if __debug__:

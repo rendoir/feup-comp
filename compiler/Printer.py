@@ -25,6 +25,8 @@ NUM_SIZE = "NUM has no size"
 NEG_SIZE = "Negative array size"
 FUNC_REDECLARED = "Function redeclared"
 WRONG_ARGS = "Wrong arguments"
+BRANCHING_DIFF = "Variable type unknown"
+BRANCH_DECL = "Variable may not be declared"
 
 ALREADY_DEF = "Variable already defined"
 
@@ -48,12 +50,16 @@ class ErrorPrinter:
         error_message = ""
 
         (err_txt, del_spaces) = ErrorPrinter.__cropString(self.lines[line-1])
-        error_message += "\n" + BOLD + simple_msg + RESET + " -> " + UNDERLINE + "(" + str(line) + ":" + str(col[0]) + ")\n" + RESET
-        error_message += " " + err_txt + "\n"
+        line_col =  str(line) + ":" + str(col[0])
+
+        error_message += "\n" + BOLD + simple_msg + "\n" + RESET
+        error_message += RED + line_col + RESET + " | " + err_txt + "\n"
+
+        jump = len(line_col) + 3
 
         col_start = col[0] - del_spaces
         col_end = col[1] - del_spaces
-        for i in range(-1, len(err_txt)):
+        for i in range(-jump, len(err_txt)):
             if (i >= col_start and i <= col_end):
                 error_message += RED + "^"
             else:
@@ -61,6 +67,7 @@ class ErrorPrinter:
 
         error_message += RESET + "\n - " + detail_msg + RESET
 
+        print("ADDED '" + detail_msg + "'")
         self.errors.append(error_message)
 
     def __suggestion(text: str) -> str:
@@ -83,13 +90,17 @@ class ErrorPrinter:
 
         warn_msg = ""
 
-        err_txt = self.lines[line-1]
+        (err_txt, del_spaces) = ErrorPrinter.__cropString(self.lines[line-1])
+        line_col =  str(line) + ":" + str(col[0])
 
-        warn_msg += "\n" + UNDERLINE + simple_msg + RESET + " -> (" + str(line) + ":" + str(col[0]) + ")\n" + RESET
-        warn_msg += " " + err_txt + "\n"
+        warn_msg += "\n" + UNDERLINE + simple_msg + "\n" + RESET
+        warn_msg += GREEN + line_col + RESET + " | " + err_txt + "\n"
+        jump = len(line_col) + 3
+        col_start = col[0] - del_spaces
+        col_end = col[1] - del_spaces
 
-        for i in range(-1, len(err_txt)):
-            if (i >= col[0] and i <= col[1]):
+        for i in range(-jump, len(err_txt)):
+            if (i >= col_start and i <= col_end):
                 warn_msg += GREEN + "^"
             else:
                 warn_msg += " "
@@ -144,7 +155,8 @@ class ErrorPrinter:
     # ----- ERROR MESSAGES -------
 
     def undefVar(self, line, cols, var_name):
-        self.__addError(line, cols, UNDEFINED_VAR, "Variable " + var_name + " is not defined in scope")
+        new_cols = (cols[0], cols[1] + len(var_name) - 1)
+        self.__addError(line, new_cols, UNDEFINED_VAR, "Variable " + var_name + " is not defined in scope")
 
     def notInitialized(self, line, cols, var_name):
         new_cols = (cols[0], cols[1] + len(var_name) - 1)
@@ -195,6 +207,13 @@ class ErrorPrinter:
 
         self.__addError(line, cols, WRONG_ARGS, "Expected: " + expected_msg + "\n - Got: " + got_msg)
 
+    def branchingVars(self, line, cols, var_name, type1, type2):
+        new_cols = (cols[0], cols[1] + len(var_name) - 1)
+        self.__addError(line, new_cols, BRANCHING_DIFF, "Cannot infer type for '" + var_name + "'!" + ErrorPrinter.__suggestion("First branched declared as '" + type1 + "', second branch declared as '" + type2 + "'"))
+
+    def branchingDecl(self, line, cols, var_name):
+        new_cols = (cols[0], cols[1] + len(var_name) - 1)
+        self.__addError(line, new_cols, BRANCH_DECL, "Variable '" + var_name + "' only declared on one branch of the code!" + ErrorPrinter.__suggestion("Try declaring it in all possible branching of the code"))
     # ----- WARNING MESSAGES ----
 
     def alreadyDefined(self, line, cols, name):
