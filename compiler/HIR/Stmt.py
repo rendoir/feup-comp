@@ -149,12 +149,8 @@ class Call(Statement):
 
     def returnType(self) -> str:
         if len(self.calls) is 1:
-            func = self.funcs[str(self.calls[-1])]
-            if func.ret_is_arr:
-                return "ARR"
-            else:
-                return "NUM"
-
+            func = self.funcs[str(self.calls[0])]
+            return func.ret_str
         else:
             return "???"
 
