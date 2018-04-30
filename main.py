@@ -23,8 +23,8 @@ def main(argv):
         return
 
     module = Module()
-    # module.parseTree(tree, printer)
-    # module.semanticCheck(printer)
+    module.parseTree(tree, printer)
+    module.semanticCheck(printer)
 
     if not printer.printMessages():
         pass # Generate code

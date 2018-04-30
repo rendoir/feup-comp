@@ -101,7 +101,9 @@ class Call(Statement):
 
         if len(call_vars) is len(func_called.vars[0]):
             for i in range(len(call_vars)):
-                wrong = (wrong or (call_vars[i] != func_args[i]))
+                if not Variable.isLiteral(call_vars[i]):
+                    diff_types = (call_vars[i].diffType(func_args[i]))
+                    wrong = wrong or diff_types
 
         if wrong:
             return printer.wrongArgs(self.line, self.cols, func_name, func_args, call_vars)
@@ -126,7 +128,6 @@ class Call(Statement):
 
         call_vars = []
         for arg_name in self.args:
-
             arg = getVar(str(arg_name), var_list)
             if arg is not None:
                 call_vars.append(arg)
@@ -321,10 +322,12 @@ class Assign(Statement):
 
         if var is not None:
             right_type = self.right.getType(var_list)
-            if self.left.isArrSize():
-                printer.sizeAssign(self.line, self.cols, self.left.access.var, str(self.right)) #TODO turn right_op into str
-            elif right_type != var.type and not self.left.isArrAccess() and not right_type == '???':
+            if self.left.isArrSize(): #Check if it is a .size assignment
+                printer.sizeAssign(self.line, self.cols, self.left.access.var, str(self.right))
+            elif right_type != var.type and not self.left.isArrAccess() and not right_type == '???': # Check for different types
                 printer.diffTypes(self.line, self.cols, var.name, var.type, right_type)
+            else:
+                var.line_init = (self.line, self.cols[0])
         else:
             var_obj = None
             # TODO add array size and number value
@@ -423,9 +426,8 @@ class ScalarAccess(Statement):
 
         if var is not None:
             if not var.initialized() and report_existance:
+                print("Init = " + str(var.line_init))
                 if isinstance(var, BranchedVariable):
-                    print("TYPE 1 = " + var.type1)
-                    print("TYPE 2 = " + var.type2)
                     printer.branchingVars(self.line, self.cols, self.var, var.type1, var.type2)
                     var.wasReported()
                 else:

@@ -15,9 +15,9 @@ class Variable:
     def initialized(self):
         return self.line_init is not None
 
-    def __ne__(self, other) -> bool:
+    def diffType(self, other) -> bool:
         if __debug__:
-            assert isinstance(other, Variable), "Variable.__ne__() 'other' should be 'Variable'"
+            assert isinstance(other, Variable), "Variable.diffType() 'other'\n - Expected 'Variable'\n - Got: " + str(type(other))
 
         return (self.type != other.type and self.type != "???" and other.type != "???")
 

@@ -137,21 +137,21 @@ class yalLexer(Lexer):
     modeNames = [ "DEFAULT_MODE" ]
 
     literalNames = [ "<INVALID>",
-            "'['", "']'", "'.'", "'!'", "'while'", "'if'", "'else'", "'='",
-            "'\"'", "'('", "')'", "','", "';'", "'{'", "'}'", "'function'",
+            "'['", "']'", "'.'", "'!'", "'while'", "'if'", "'else'", "'='", 
+            "'\"'", "'('", "')'", "','", "';'", "'{'", "'}'", "'function'", 
             "'module'", "'size'" ]
 
     symbolicNames = [ "<INVALID>",
-            "REL_OP", "ADDSUB_OP", "ART_OP", "BTW_OP", "NOT_OP", "WHILE",
-            "IF", "ELSE", "ASS_OP", "ASPA", "LPAR", "RPAR", "COMMA", "D_COMMA",
-            "L_BRACKET", "R_BRACKET", "FUNC", "MODULE", "SIZE", "ID", "LETTER",
-            "NUMBER", "DIGIT", "STRING", "SPACES_AND_SUCH", "LINE_COMMENT",
+            "REL_OP", "ADDSUB_OP", "ART_OP", "BTW_OP", "NOT_OP", "WHILE", 
+            "IF", "ELSE", "ASS_OP", "ASPA", "LPAR", "RPAR", "COMMA", "D_COMMA", 
+            "L_BRACKET", "R_BRACKET", "FUNC", "MODULE", "SIZE", "ID", "LETTER", 
+            "NUMBER", "DIGIT", "STRING", "SPACES_AND_SUCH", "LINE_COMMENT", 
             "MULTI_COMMENT" ]
 
-    ruleNames = [ "T__0", "T__1", "T__2", "REL_OP", "ADDSUB_OP", "ART_OP",
-                  "BTW_OP", "NOT_OP", "WHILE", "IF", "ELSE", "ASS_OP", "ASPA",
-                  "LPAR", "RPAR", "COMMA", "D_COMMA", "L_BRACKET", "R_BRACKET",
-                  "FUNC", "MODULE", "SIZE", "ID", "LETTER", "NUMBER", "DIGIT",
+    ruleNames = [ "T__0", "T__1", "T__2", "REL_OP", "ADDSUB_OP", "ART_OP", 
+                  "BTW_OP", "NOT_OP", "WHILE", "IF", "ELSE", "ASS_OP", "ASPA", 
+                  "LPAR", "RPAR", "COMMA", "D_COMMA", "L_BRACKET", "R_BRACKET", 
+                  "FUNC", "MODULE", "SIZE", "ID", "LETTER", "NUMBER", "DIGIT", 
                   "STRING", "SPACES_AND_SUCH", "LINE_COMMENT", "MULTI_COMMENT" ]
 
     grammarFileName = "yal.g4"
@@ -162,3 +162,5 @@ class yalLexer(Lexer):
         self._interp = LexerATNSimulator(self, self.atn, self.decisionsToDFA, PredictionContextCache())
         self._actions = None
         self._predicates = None
+
+
