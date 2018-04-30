@@ -109,6 +109,7 @@ class Call(Statement):
                 if not Variable.isLiteral(call_vars[i]):
                     diff_types = (call_vars[i].diffType(func_args[i]))
                     wrong = wrong or diff_types
+                    call_vars[i] = func_args[i]
 
         if wrong:
             return printer.wrongArgs(self.line, self.cols, func_name, func_args, call_vars)
