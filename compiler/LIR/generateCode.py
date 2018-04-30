@@ -1,4 +1,5 @@
 from compiler.HIR.CodeScope import *
+from compiler.HIR.Stmt import *
 
 NL = '\n'
 
@@ -27,6 +28,7 @@ def generateCode(module, in_file):
             out.write(".method static " + function + "(" + getArgsString(module.code[function]) + ")" + getReturnString(module.code[function]) + NL)
             out.write(".limit locals " + str(getLocals(module.code[function])) + NL)
             out.write(".limit stack " + str(getStack(module.code)) + NL)
+            processMethod(module.code[function].code, out)
             out.write(".end method" + NL + NL)
         out.close()
     print('--- END GENERATING CODE ---')
@@ -56,6 +58,7 @@ def getReturnString(function):
 def getStack(code):
     return 100
 
+
 #TODO
 def getLocals(function):
     res = 0
@@ -76,3 +79,34 @@ def getLocalsScope(scope):
     total += len(scope.vars)
     total += getLocalsList(scope.code)
     return total
+
+
+#TODO
+def processMethod(f_list, out):
+    for i in range(len(f_list)):
+        processStmt(f_list[i], out)
+
+def processStmt(stmt, out):
+    if(isinstance(stmt, Call)):
+        out.write("invokestatic ")
+
+        path = ""
+        for call in stmt.calls:
+            path += str(call) + "/"
+        if(len(stmt.calls) > 0):
+            path = path[:-1]
+        out.write(path + NL)
+
+
+        args = ""
+        for arg in stmt.args:
+            args += getArgString(arg)
+        out.write(args + NL)
+
+
+def getArgString(arg):
+    if(arg.type == "ARR"):
+        return "[I"
+    if(arg.type == "NUM"):
+        return "I"
+    return ""
