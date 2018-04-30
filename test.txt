@@ -51,7 +51,7 @@ module program1 {
     new_var = undef_var;        // Error 9 cannot infer type
 
     while (data < c) {          // Error 10 cant use 2 arrays
-      a = d[i]; i=i+1; b=d[i];  // Error 11 cant assign number to a variable (a is an array)
+      a = d[i]; i=i+1; b=d[i];  
       mx = library1.max(a, b);
       mn = library1.min(a, b);
     }
