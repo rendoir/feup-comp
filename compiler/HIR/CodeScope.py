@@ -103,15 +103,21 @@ class Function(Scope):
 
         if ret_var is not None:
             self.ret_var = str(ret_var.children[0])
-            if(isinstance(ret_var, yalParser.Array_elementContext)):
-                self.ret_str = "ARR"
-                self.vars[1][self.ret_var] = ArrayVariable(self.ret_var, None, (0, 0), None)
+            var = self.isArg(self.ret_var)
+
+            if var is not None:
+                self.ret_str = var.type
+                self.vars[1][self.ret_var] = var
             else:
-                self.ret_str = "NUM"
-                self.vars[1][self.ret_var] = NumberVariable(self.ret_var, None, (0, 0), None)
+                if(isinstance(ret_var, yalParser.Array_elementContext)):
+                    self.ret_str = "ARR"
+                    self.vars[1][self.ret_var] = ArrayVariable(self.ret_var, None, (0, 0), None)
+                else:
+                    self.ret_str = "NUM"
+                    self.vars[1][self.ret_var] = NumberVariable(self.ret_var, None, (0, 0), None)
         else:
             self.ret_var = None
-            self.ret_str = "VOID"
+            self.ret_str = '???'
 
     def isArg(self, var_name) -> Variable:
         if __debug__:

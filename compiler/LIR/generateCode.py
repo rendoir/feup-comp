@@ -47,7 +47,7 @@ def getReturnString(function):
         return "["
     if(function.ret_str == "NUM"):
         return "I"
-    if(function.ret_str == "VOID"):
+    if(function.ret_str == '???'):
         return "V"
     return ""
 
