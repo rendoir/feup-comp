@@ -6,11 +6,12 @@ module program1 {
   c[] = [data];       //Error 1 cant use array as size
   undef[] = [cenas];  //Error 2 cant use undefined (not initializd)
   undef2 = [cenas];   // Error 3 not initialized
-  N;      // Warning variable already declared (no effect)
+  N;          // Warning variable already declared (no effect)
   mx;         // attribute mx
   mn;         // attribute mn
 
   function main() {
+    wut = main();
     vars = [2];
     varss = det(vars, vars, N);
     varsss = 2;

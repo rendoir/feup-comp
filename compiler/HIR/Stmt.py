@@ -31,6 +31,9 @@ def getVar(var_name, vars_list) -> Variable:
         assert isinstance(var_name, str), "Stmt.getVar() 'var_name'\n - Expected 'str'\n - Got: " + str(type(var_name))
         assert isinstance(vars_list, list), "Stmt.getVar() 'vars_list'\n - Expected 'list'\n - Got: " + str(type(vars_list))
 
+    # print("GETTING = " + str(var_name))
+    # print(vars_list[0])
+
     for var_list in vars_list:
         if isinstance(var_list, dict):
             if var_name in var_list:
@@ -68,8 +71,10 @@ class Call(Statement):
         self.funcs = Scope.getFuncs(parent)
         self.calls = node.children[0]
         self.args = []
-        for arg in node.children[1].children:
-            self.args.append(arg)
+
+        if len(node.children) is 2:
+            for arg in node.children[1].children:
+                self.args.append(arg)
 
 
     def __str__(self) -> str:
@@ -113,7 +118,7 @@ class Call(Statement):
             assert isinstance(printer, ErrorPrinter), "Call.checkSemantics() 'printer'\n - Expected 'ErrorPrinter'\n - Got: " + str(type(printer))
             assert isinstance(var_list, list), "Call.checkSemantics() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
 
-        func_name = str(self.calls[0])
+        func_name = str(self.calls[-1])
         func_called = None
         func_exists = False
         mod_call = len(self.calls) is 2
@@ -144,7 +149,7 @@ class Call(Statement):
 
     def returnType(self) -> str:
         if len(self.calls) is 1:
-            func = self.funcs[str(self.calls[0])]
+            func = self.funcs[str(self.calls[-1])]
             if func.ret_is_arr:
                 return "ARR"
             else:
@@ -267,7 +272,7 @@ class RightOP(Statement):
             assert isinstance(var_list, list), "RightOP.getType() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
 
         if self.arr_size:
-            return None
+            return 'ARR'
         elif not self.needs_op:
             return self.value[0].getType(var_list)
         else:
@@ -324,7 +329,8 @@ class Assign(Statement):
             right_type = self.right.getType(var_list)
             if self.left.isArrSize(): #Check if it is a .size assignment
                 printer.sizeAssign(self.line, self.cols, self.left.access.var, str(self.right))
-            elif right_type != var.type and not self.left.isArrAccess() and not right_type == '???': # Check for different types
+            elif Variable.differentType(right_type, var.type) and var.type != 'ARR': # Check for different types
+                print("RIGHT = " + str(right_type) + ", LEFT = " + var.type)
                 printer.diffTypes(self.line, self.cols, var.name, var.type, right_type)
             else:
                 var.line_init = (self.line, self.cols[0])
@@ -426,7 +432,7 @@ class ScalarAccess(Statement):
 
         if var is not None:
             if not var.initialized() and report_existance:
-                print("Init = " + str(var.line_init))
+                print("Init = " + str(var))
                 if isinstance(var, BranchedVariable):
                     printer.branchingVars(self.line, self.cols, self.var, var.type1, var.type2)
                     var.wasReported()

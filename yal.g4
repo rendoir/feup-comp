@@ -22,7 +22,6 @@ FUNC: 'function';
 MODULE: 'module';
 SIZE: 'size';
 
-
 module: MODULE ID L_BRACKET declaration* function* R_BRACKET;
 
 declaration: (array_element | scalar_element)

@@ -19,8 +19,7 @@ function det(d[]) {
 function main() {
 	det(data);
 
-	io.println("max: ",mx); 
+	io.println("max: ",mx);
 	io.println("min: ",mn);
 }
 }
-

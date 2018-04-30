@@ -94,21 +94,38 @@ class Function(Scope):
         #[<arguments>, <local_variables>]
         self.vars = [[], dict()]
 
-        if ret_var is not None:
-            self.ret_var = str(ret_var.children[0])
-            self.ret_is_arr = isinstance(ret_var, yalParser.Array_elementContext)
-            if self.ret_is_arr:
-                self.vars[1][self.ret_var] = ArrayVariable(self.ret_var, None, (0, 0), None)
-            else:
-                self.vars[1][self.ret_var] = NumberVariable(self.ret_var, None, (0, 0), None)
-        else:
-            self.ret_var = None
-
         if args is not None:
             self.__addArgs(args)
 
         if stmts is not None:
             self.__addStmts(stmts.children)
+
+
+        if ret_var is not None:
+            self.ret_var = str(ret_var.children[0])
+            self.ret_is_arr = isinstance(ret_var, yalParser.Array_elementContext)
+            var = self.isArg(self.ret_var)
+
+            if var is not None:
+                self.vars[1][self.ret_var] = var
+            else:
+                if self.ret_is_arr:
+                    self.vars[1][self.ret_var] = ArrayVariable(self.ret_var, -1, (0, 0), None)
+                else:
+                    self.vars[1][self.ret_var] = NumberVariable(self.ret_var, None, (0, 0), None)
+        else:
+            self.ret_var = None
+            self.ret_is_arr = False
+
+    def isArg(self, var_name) -> Variable:
+        if __debug__:
+            assert isinstance(var_name, str), "Function.isArg() 'var_name'\n - Expected: 'str'\n - Got: " + str(type(var_name))
+
+        for arg in self.vars[0]:
+            if arg.name == var_name:
+                return arg
+
+        return None
 
     def addVar(self, name, var):
         if __debug__:
@@ -129,11 +146,11 @@ class Function(Scope):
 
         children = args.getChildren()
         for child in children:
+
             if isinstance(child, yalParser.Array_elementContext):
-                self.vars[0].append(ArrayVariable(str(child.children[0]), None, (0, 0), (0, 0)))
+                self.vars[0].append(ArrayVariable(str(child.children[0]), -1, (0, 0), (0, 0)))
             else:
                 self.vars[0].append(NumberVariable(str(child.children[0]), None, (0, 0), (0, 0)))
-
 
     def __addStmts(self, stmts: List[yalParser.Stmt_listContext]):
         from . import Stmt
@@ -192,7 +209,9 @@ class If(Scope):
         if name in self.vars:
             existing_var = self.vars[name]
             if self.checking_else:
-                if not existing_var != var:
+                print("Existing type = " + str(existing_var.type))
+                print("Var type = " + str(var.type))
+                if not existing_var.diffType(var):
                     if existing_var.type == 'ARR':
                         var_obj = ArrayVariable(name, (-1 if existing_var.size != var.size else var.size), (self.line, self.cols[0]), (self.line, self.cols[0]))
                     else:

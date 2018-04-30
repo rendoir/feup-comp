@@ -1,16 +1,13 @@
-module sqrt
+module aval6
 {
 
-function a=sqrt() {
-	vsqn = io.read();
-	io.println("vsqn: ", vsqn);
-
+function a=sqrt(vsqn) {
 	vsq=vsqn;
      	asq=0;
      	a=0;
      	tvsq=0;
      	i=0;
-     	while(I < 6) {
+     	while(i < 6) {
         	nasq1 = asq + a;
         	nasq2 = nasq1 << 2;
 	    	nasq = nasq2 | 1;
@@ -29,13 +26,11 @@ function a=sqrt() {
 		}
 		i=i+1;
 	}
-
-	io.println("sqrt: ", a);
 }
 
-function main()
-{
- a=sqrt();
+function main() {
+		 a=sqrt(17);
+		 io.println(a); // result = 4;
 }
 
 }

@@ -146,13 +146,15 @@ class yalParserListener(yalListener):
     # call: name arg_list
     #  where name is a string which when split with '.' gives the access
     def exitCall(self, ctx:yalParser.CallContext):
-        if valid(ctx, 4):
+        if valid(ctx, 3):
             del ctx.children[-1]
-            del ctx.children[-2]
+            if isinstance(ctx.children[-1], tree.Tree.TerminalNodeImpl):
+                del ctx.children[-1]
+            else:
+                del ctx.children[-2]
 
-            # Check if it is a module call
-            if len(ctx.children) is 4:
-                ctx.children[0] = [ctx.children[0], ctx.children[1]]
+            if len(ctx.children) > 1 and str(ctx.children[1]) == '.':
+                ctx.children[0] = [ctx.children[0], ctx.children[2]]
                 del ctx.children[2]
                 del ctx.children[1]
             else:

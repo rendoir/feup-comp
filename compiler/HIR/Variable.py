@@ -15,6 +15,14 @@ class Variable:
     def initialized(self):
         return self.line_init is not None
 
+    def differentType(first_type, second_type) -> bool:
+        if __debug__:
+            assert isinstance(first_type, str), "Variable.diffType() 'first_type'\n - Expected 'str'\n - Got: " + str(type(first_type))
+            assert isinstance(second_type, str), "Variable.diffType() 'second_type'\n - Expected 'str'\n - Got: " + str(type(second_type))
+
+        return first_type != second_type and first_type != '???' and second_type != '???'
+
+
     def diffType(self, other) -> bool:
         if __debug__:
             assert isinstance(other, Variable), "Variable.diffType() 'other'\n - Expected 'Variable'\n - Got: " + str(type(other))
@@ -67,6 +75,9 @@ class UndefinedVariable(Variable):
     def __init__(self, name=None, size=None, decl=None, init=None):
         super(UndefinedVariable, self).__init__(None, "???", 0, 0)
 
+    def __str__(self):
+        return 'Undef'
+
 class BranchedVariable(Variable):
     def __init__(self, name, type1, type2, decl=None, init=None):
         super(BranchedVariable, self).__init__(name, "???", None, None)
@@ -78,3 +89,6 @@ class BranchedVariable(Variable):
         self.reported = True
         self.init = 0
         self.decl = 0
+
+    def __str__(self):
+        return 'Branched'

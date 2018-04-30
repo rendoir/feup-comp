@@ -22,12 +22,16 @@ def main(argv):
         print(" -> " + RED + str(parser.getNumberOfSyntaxErrors()) + RESET + " Syntax errors detected!")
         return
 
+
     module = Module()
     module.parseTree(tree, printer)
     module.semanticCheck(printer)
 
-    if not printer.printMessages():
-        pass # Generate code
+    sem_errors = printer.printMessages()
+    if not sem_errors:
+        generateCode(module,argv[1])
+
+    sys.exit(1 if sem_errors else 0)
 
 if __name__ == '__main__':
     main(sys.argv)
