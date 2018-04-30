@@ -99,15 +99,22 @@ def processStmt(stmt, out):
 
 
         args = ""
-        print("WUT = ",end='')
-        pprint(stmt)
-        pprint(stmt.args)
+        remove = False
         for arg in stmt.args:
-            args += getArgString(arg)
+            remove = True
+            args += getArgString(arg) + ";"
+
+        if remove:
+            args = args[:-1]
         out.write(args + NL)
 
 
 def getArgString(arg):
+    if __debug__:
+        assert isinstance(arg, Variable) or isinstance(arg, str), "getArgString() 'arg'\n - Expected: 'Variable'\n - Got: " + str(type(arg))
+
+    if isinstance(arg, str):
+        return 'Ljava/lang/String'
     if(arg.type == "ARR"):
         return "[I"
     if(arg.type == "NUM"):

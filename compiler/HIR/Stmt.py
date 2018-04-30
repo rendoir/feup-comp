@@ -69,12 +69,15 @@ class Call(Statement):
             assert isinstance(parent, Scope), "Call.__init__() 'parent'\n - Expected 'Scope'\n - Got: " + str(type(mod_funcs))
 
         self.funcs = Scope.getFuncs(parent)
-        self.calls = node.children[0]
+        self.calls = []
+        for child in node.children[0]:
+            self.calls.append(str(child))
+
         self.args = []
 
         if len(node.children) is 2:
             for arg in node.children[1].children:
-                self.args.append(arg)
+                self.args.append(str(arg))
 
 
     def __str__(self) -> str:
@@ -86,7 +89,7 @@ class Call(Statement):
         remove = False
         for arg in self.args:
             remove = True
-            ret += str(arg) + ", "
+            ret += arg + ", "
         if remove:
             ret = ret[:-2]
 
@@ -107,10 +110,9 @@ class Call(Statement):
         if len(call_vars) is len(func_called.vars[0]):
             for i in range(len(call_vars)):
                 if not Variable.isLiteral(str(call_vars[i])):
-                    print(" -> Nope")
                     diff_types = (call_vars[i].diffType(func_args[i]))
                     wrong = wrong or diff_types
-                    self.args[i] = func_args[i]
+                    self.args[i] = call_vars[i]
 
 
         if wrong:
@@ -134,9 +136,10 @@ class Call(Statement):
                 func_called = self.funcs[func_name]
                 func_exists = True
 
+
         call_vars = []
         for arg_name in self.args:
-            arg = getVar(str(arg_name), var_list)
+            arg = getVar(arg_name, var_list)
             if arg is not None:
                 call_vars.append(arg)
             else:
@@ -149,6 +152,9 @@ class Call(Statement):
 
         if func_exists:
             self.__checkArguments(printer, func_name, func_called, call_vars)
+        elif mod_call:
+            self.args = call_vars
+
 
     def returnType(self) -> str:
         if len(self.calls) is 1:

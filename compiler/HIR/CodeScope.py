@@ -211,8 +211,6 @@ class If(Scope):
         if name in self.vars:
             existing_var = self.vars[name]
             if self.checking_else:
-                print("Existing type = " + str(existing_var.type))
-                print("Var type = " + str(var.type))
                 if not existing_var.diffType(var):
                     if existing_var.type == 'ARR':
                         var_obj = ArrayVariable(name, (-1 if existing_var.size != var.size else var.size), (self.line, self.cols[0]), (self.line, self.cols[0]))
