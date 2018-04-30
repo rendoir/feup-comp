@@ -99,6 +99,9 @@ def processStmt(stmt, out):
 
 
         args = ""
+        print("WUT = ",end='')
+        pprint(stmt)
+        pprint(stmt.args)
         for arg in stmt.args:
             args += getArgString(arg)
         out.write(args + NL)
