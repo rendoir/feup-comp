@@ -28,7 +28,7 @@ def main(argv):
     module.semanticCheck(printer)
 
     if not printer.printMessages():
-        pass # Generate code
+        generateCode(module)
 
 if __name__ == '__main__':
     main(sys.argv)
