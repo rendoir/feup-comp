@@ -24,7 +24,7 @@ def generateCode(module, in_file):
 
         #Module Functions
         for function in module.code:
-            out.write(".method static " + function + "(" + getArgsString(module.code[function]) + ")" + getReturnString(module.code[function]))
+            out.write(".method static " + function + "(" + getArgsString(module.code[function]) + ")" + getReturnString(module.code[function]) + NL)
             out.write(".limit locals " + str(getLocals(module.code[function])) + NL)
             out.write(".limit stack " + str(getStack(module.code)) + NL)
             out.write(".end method" + NL + NL)
@@ -42,9 +42,14 @@ def getArgsString(function):
     return args_str
 
 
-def getReturnString(module):
-    return_str = ""
-    return return_str + NL
+def getReturnString(function):
+    if(function.ret_str == "ARR"):
+        return "["
+    if(function.ret_str == "NUM"):
+        return "I"
+    if(function.ret_str == "VOID"):
+        return "V"
+    return ""
 
 
 #TODO
