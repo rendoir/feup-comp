@@ -25,7 +25,7 @@ def main(argv):
 
     module = Module()
     module.parseTree(tree, printer)
-    #module.semanticCheck(printer)
+    module.semanticCheck(printer)
 
     if not printer.printMessages():
         generateCode(module,argv[1])
