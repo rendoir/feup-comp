@@ -10,10 +10,17 @@ class Scope:
         if __debug__:
             assert isinstance(parent, Scope), "Scope.__init__() 'parent'\n - Expected: 'Scope'\n - Got: " + str(type(parent))
 
+        # Variables of this scope
         self.vars = {}
+
+        # Code line or another scope (in case of if's and while's)
         self.code = []
-        self.branched_vars = {}
+
+        # The parent scope, if it is None, then the scope is the module
         self.parent = parent
+
+        #Used only for semantic checks
+        self.branched_vars = {}
 
     def addVar(self, name, var):
         raise NotImplementedError( "Should have implemented this" )
@@ -84,11 +91,16 @@ class Function(Scope):
             assert isinstance(stmts, yalParser.Stmt_listContext), "Function.__init__() 'stmts'\n - Expected: 'yalParser.Stmt_listContext'\n - Got: " + str(type(stmts))
             assert isinstance(parent, Scope), "Function.__init__() 'parent'\n - Expected: 'Scope'\n - Got: " + str(type(parent))
 
-        self.vars = [[], dict()] #[<arguments>, <local_variables>]
+        #[<arguments>, <local_variables>]
+        self.vars = [[], dict()]
+
         if ret_var is not None:
             self.ret_var = str(ret_var.children[0])
             self.ret_is_arr = isinstance(ret_var, yalParser.Array_elementContext)
-            self.vars[1][self.ret_var] = (ArrayVariable(self.ret_var, None, 0, None) if self.ret_is_arr else NumberVariable(self.ret_var, None, 0, None))
+            if self.ret_is_arr:
+                self.vars[1][self.ret_var] = ArrayVariable(self.ret_var, None, (0, 0), None)
+            else:
+                self.vars[1][self.ret_var] = NumberVariable(self.ret_var, None, (0, 0), None)
         else:
             self.ret_var = None
 

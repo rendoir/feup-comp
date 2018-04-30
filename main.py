@@ -22,10 +22,9 @@ def main(argv):
         print(" -> " + RED + str(parser.getNumberOfSyntaxErrors()) + RESET + " Syntax errors detected!")
         return
 
-
     module = Module()
-    module.parseTree(tree, printer)
-    module.semanticCheck(printer)
+    # module.parseTree(tree, printer)
+    # module.semanticCheck(printer)
 
     if not printer.printMessages():
         generateCode(module)
