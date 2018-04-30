@@ -39,6 +39,7 @@ class Variable:
         if var[0].isdigit():
             return True;
 
+
         return False
 
 class NumberVariable (Variable):

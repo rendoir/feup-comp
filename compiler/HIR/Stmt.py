@@ -106,10 +106,12 @@ class Call(Statement):
 
         if len(call_vars) is len(func_called.vars[0]):
             for i in range(len(call_vars)):
-                if not Variable.isLiteral(call_vars[i]):
+                if not Variable.isLiteral(str(call_vars[i])):
+                    print(" -> Nope")
                     diff_types = (call_vars[i].diffType(func_args[i]))
                     wrong = wrong or diff_types
                     self.args[i] = func_args[i]
+
 
         if wrong:
             return printer.wrongArgs(self.line, self.cols, func_name, func_args, call_vars)
