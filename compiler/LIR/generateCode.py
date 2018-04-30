@@ -18,8 +18,11 @@ def generateCode(module, in_file):
         for var in module.vars:
             out.write(".field static " + module.vars[var].name + " ")
             if(module.vars[var].type == "ARR"):
-                out.write("[")
-            out.write("I")
+                out.write("[I")
+            else:
+                out.write("I")
+                if module.vars[var].value is not None:
+                    out.write(" = " + str(module.vars[var].value))
             out.write(NL)
 
         out.close()
