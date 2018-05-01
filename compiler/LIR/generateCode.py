@@ -95,26 +95,20 @@ def processStmt(stmt, out):
             path += str(call) + "/"
         if(len(stmt.calls) > 0):
             path = path[:-1]
-        out.write(path + NL)
-
+        out.write(path + "(")
 
         args = ""
-        remove = False
         for arg in stmt.args:
-            remove = True
-            args += getArgString(arg) + ";"
+            args += getArgString(arg)
 
-        if remove:
-            args = args[:-1]
-        out.write(args + NL)
+        out.write(args + ")" + NL)
+        #out.write(getReturnString(getFunction(stmt)) + NL)
+
 
 
 def getArgString(arg):
-    if __debug__:
-        assert isinstance(arg, Variable) or isinstance(arg, str), "getArgString() 'arg'\n - Expected: 'Variable'\n - Got: " + str(type(arg))
-
     if isinstance(arg, str):
-        return 'Ljava/lang/String'
+        return 'Ljava/lang/String;'
     if(arg.type == "ARR"):
         return "[I"
     if(arg.type == "NUM"):
