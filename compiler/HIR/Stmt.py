@@ -5,6 +5,7 @@ from typing import List
 from compiler.HIR.Variable import Variable, ArrayVariable, NumberVariable, UndefinedVariable, BranchedVariable
 from compiler.Printer import ErrorPrinter
 from .CodeScope import Scope
+from ..LIR import Instruction
 
 
 def parseStmt(stmt, parent) -> ParserRuleContext:
@@ -397,6 +398,8 @@ class ArrayAccess(Statement):
                 printer.numberIndexing(self.line, self.cols, var.name, var.type)
             elif self.index.isdigit() and not var.validAccess(int(self.index)):
                 printer.outOfBounds(self.line, self.cols, var.name, var.size, self.index)
+            else:
+                self.index = var
         elif report_existance:
             if Scope.isBranchVar(self.parent, self.var):
                 printer.branchingDecl(self.line, self.cols, self.var)
@@ -406,6 +409,19 @@ class ArrayAccess(Statement):
 
     def __str__(self) -> str:
         return self.var + "[" + self.index + "]"
+
+    def toLIR(self) -> str:
+        if __debug__:
+            assert isinstance(parent, Instruction), "ArrayAccess.checkSemantics() 'parent'\n - Expected 'Instruction'\n - Got: " + str(type(parent))
+
+        return ('LDA', self.var)
+
+        return 'LDA ' + self.var + ' ' + self.index
+
+    def __indexToLIR(self):
+        if isinstance(self.index, str):
+            scope = varScope(self.index, vars_list)
+
 
 class ScalarAccess(Statement):
     def __init__(self, node, parent):

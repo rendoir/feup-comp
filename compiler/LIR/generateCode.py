@@ -4,6 +4,36 @@ from compiler.HIR.Stmt import *
 NL = '\n'
 IO_return = dict()
 
+local_variables = []
+
+operators = {
+    '*':    ('imul ' + NL),
+    '/':    ('idiv ' + NL),
+    '<<':   ('ishl ' + NL),
+    '>>':   ('ishr ' + NL),
+    '>>>':  ('WTF IS THIS???' + NL),
+    '&':    ('iand ' + NL),
+    '|':    ('ior ' + NL),
+    '^':    ('ixor ' + NL),
+    '+':    ('iadd ' + NL),
+    '-':    ('isub ' + NL),
+}
+
+def __getLocalIndex(var_name) -> int:
+    for i in range(len(local_variables)):
+        if local_variables[i] == var_name:
+            return i
+
+    else:
+        print("How did semantics not catch this?")
+        return len(local_variables)
+
+
+def __addLocalVar(var_name) -> int:
+    index = __getLocalIndex(var_name)
+    if index == -1:
+        local_variables.append(var_name)
+
 def generateCode(module, in_file):
     print('--- BEGIN GENERATING CODE ---')
     initIO()
@@ -30,7 +60,7 @@ def generateCode(module, in_file):
             out.write(".method static " + function + "(" + getArgsString(module.code[function]) + ")" + getReturnString(module.code[function]) + NL)
             out.write(".limit locals " + str(getLocals(module.code[function])) + NL)
             out.write(".limit stack " + str(getStack(module.code)) + NL)
-            processMethod(module.code[function].code, out, module)
+            processMethod(module.code[function], out, module)
             out.write(".end method" + NL + NL)
         out.close()
     print('--- END GENERATING CODE ---')
@@ -86,32 +116,79 @@ def getLocalsScope(scope):
 
 
 #TODO
-def processMethod(f_list, out, module):
-    for i in range(len(f_list)):
-        processStmt(f_list[i], out, module)
+def processMethod(function, out, module):
+    del local_variables[:]
+    for arg in function.vars[0]:
+        local_variables.append(arg.name)
 
-def processStmt(stmt, out, module):
+    for i in range(len(function.code)):
+        processStmt(function.code[i], out, module.name)
+
+    out.write('return' + NL)
+
+def processStmt(stmt, out, mod_name):
     if(isinstance(stmt, Call)):
-        processArgsLoading(stmt, out, module)
-        out.write("invokestatic ")
+        __writeCall(stmt, out, mod_name)
+    elif isinstance(stmt, Assign):
+        __writeRightOP(stmt.right, out, mod_name)
+        (final_inst, var_name) = __writeLeftOP(stmt.left, out)
+        out.write(final_inst)
 
-        path = ""
-        if(len(stmt.calls) == 1):
-            path = module.name + "/" + stmt.calls[0]
+def __writeLeftOP(left, out):
+    if isinstance(left.access, ArrayAccess):
+        access = left.access
+        out.write('aload ' + str(access.var) + NL)
+        if isinstance(access.index, Variable):
+            out.write('iload ' + str(__getLocalIndex(access.index.name)) + NL)
         else:
-            for call in stmt.calls:
-                path += str(call) + "/"
-            path = path[:-1]
-        out.write(path + "(")
+            out.write('ldc ' + access.index + NL)
+        return ('aastore', str(access.var))
+    else:
+        access = left.access
+        return (('istore ' + str(__getLocalIndex(access.var)) + NL), access.var)
 
-        args = ""
-        for arg in stmt.args:
-            args += getArgString(arg)
+def __writeRightOP(right, out, mod_name):
+    if right.arr_size:
+        __writeArrSize(right.value[0], out)
+    elif right.needs_op:
+        __writeTerm(right.value[0], out, mod_name)
+        __writeTerm(right.value[1], out, mod_name)
+        out.write(operators[right.operator])
+    else:
+        __writeTerm(right.value[0], out, mod_name)
 
-        out.write(args + ")")
-        func = getFunction(stmt)
-        out.write(getReturnString(func) + NL)
+def __writeTerm(term, out, mod_name):
+    if isinstance(term.value, Call):
+        __writeCall(term.value, out, mod_name)
+    elif isinstance(term.value, ArrayAccess):
+        __writeArrAccess(term.value, out)
+    elif isinstance(term.value, ScalarAccess):
+        __writeScalarAccess(term.value, out)
+    else:
+        out.write('ldc ' + str(self.value) + NL)
 
+def __writeCall(call, out, mod_name):
+    processArgsLoading(call, out)
+    processFuncCall(call, out, mod_name)
+
+def __writeArrSize(arr_size, out):
+    if arr_size.access:
+        __writeScalarAccess(arr_size.value, out)
+    else:
+        out.write('ldc ' + str(arr_size.value) + NL)
+
+def __writeScalarAccess(access, out):
+    if access.size:
+        out.write('arraylength ' + str(__getLocalIndex(access.var)) + NL)
+    else:
+        out.write('aload ' + str(__getLocalIndex(access.var)) + NL)
+
+def __writeArrAccess(access, out):
+    out.write('aload ' + str(access.var))
+    if isinstance(access.index, str):
+        out.write('ldc ' + access.index + NL)
+    else:
+        out.write('iload ' + str(__getLocalIndex(access.index.name)) + NL)
 
 def getArgString(arg):
     if isinstance(arg, str):
@@ -136,13 +213,29 @@ def initIO():
     IO_return["println"] = "V"
 
 
-def processArgsLoading(stmt, out, module):
-    for arg in stmt.args:
-        loadVar(arg, out, module)
+def processArgsLoading(call, out):
+    for arg in call.args:
+        if isinstance(arg, Variable):
+            if arg.type == 'ARR':
+                out.write('aload ' + str(__getLocalIndex(arg.name)) + NL)
+            else:
+                out.write('iload ' + str(__getLocalIndex(arg.name)) + NL)
+        else:
+            out.write('ldc ' + arg + NL)
 
-
-def loadVar(var, out, module):
-    if(isinstance(var, Variable)):
-        print(var.name)
+def processFuncCall(call, out, mod_name):
+    out.write('invokestatic ')
+    path = ''
+    if len(call.calls) is 1:
+        path = mod_name + '/' + call.calls[-1]
     else:
-        out.write("ldc " + var + NL)
+        path = call.calls[0] + '/' + call.calls[1]
+    out.write(path + '(')
+
+    args = ''
+    for arg in call.args:
+        args += getArgString(arg)
+
+    out.write(args + ')')
+    func = getFunction(call)
+    out.write(getReturnString(func) + NL)
