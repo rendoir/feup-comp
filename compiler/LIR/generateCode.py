@@ -45,6 +45,8 @@ def getArgsString(function):
 
 
 def getReturnString(function):
+    if(function is None):
+        return ""
     if(function.ret_str == "ARR"):
         return "["
     if(function.ret_str == "NUM"):
@@ -101,9 +103,9 @@ def processStmt(stmt, out):
         for arg in stmt.args:
             args += getArgString(arg)
 
-        out.write(args + ")" + NL)
-        #out.write(getReturnString(getFunction(stmt)) + NL)
-
+        out.write(args + ")")
+        func = getFunction(stmt)
+        out.write(getReturnString(func) + NL)
 
 
 def getArgString(arg):
@@ -114,3 +116,7 @@ def getArgString(arg):
     if(arg.type == "NUM"):
         return "I"
     return ""
+
+
+def getFunction(call):
+    return call.funcs.get(call.calls[-1])
