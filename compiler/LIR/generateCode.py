@@ -2,9 +2,11 @@ from compiler.HIR.CodeScope import *
 from compiler.HIR.Stmt import *
 
 NL = '\n'
+IO_return = dict()
 
 def generateCode(module, in_file):
     print('--- BEGIN GENERATING CODE ---')
+    initIO()
     out_file = in_file.split('.')[0] + '.tmp' #TODO CHANGE .tmp TO .j
     with open(out_file, 'w') as out:
         #Module
@@ -28,7 +30,7 @@ def generateCode(module, in_file):
             out.write(".method static " + function + "(" + getArgsString(module.code[function]) + ")" + getReturnString(module.code[function]) + NL)
             out.write(".limit locals " + str(getLocals(module.code[function])) + NL)
             out.write(".limit stack " + str(getStack(module.code)) + NL)
-            processMethod(module.code[function].code, out)
+            processMethod(module.code[function].code, out, module)
             out.write(".end method" + NL + NL)
         out.close()
     print('--- END GENERATING CODE ---')
@@ -45,8 +47,8 @@ def getArgsString(function):
 
 
 def getReturnString(function):
-    if(function is None):
-        return ""
+    if(not isinstance(function, Function)):
+        return IO_return[function]
     if(function.ret_str == "ARR"):
         return "["
     if(function.ret_str == "NUM"):
@@ -84,18 +86,20 @@ def getLocalsScope(scope):
 
 
 #TODO
-def processMethod(f_list, out):
+def processMethod(f_list, out, module):
     for i in range(len(f_list)):
-        processStmt(f_list[i], out)
+        processStmt(f_list[i], out, module)
 
-def processStmt(stmt, out):
+def processStmt(stmt, out, module):
     if(isinstance(stmt, Call)):
         out.write("invokestatic ")
 
         path = ""
-        for call in stmt.calls:
-            path += str(call) + "/"
-        if(len(stmt.calls) > 0):
+        if(len(stmt.calls) == 1):
+            path = module.name + "/" + stmt.calls[0]
+        else:
+            for call in stmt.calls:
+                path += str(call) + "/"
             path = path[:-1]
         out.write(path + "(")
 
@@ -119,4 +123,13 @@ def getArgString(arg):
 
 
 def getFunction(call):
-    return call.funcs.get(call.calls[-1])
+    func = call.funcs.get(call.calls[-1])
+    if(func is not None):
+        return func
+    return call.calls[-1]
+
+
+def initIO():
+    IO_return["read"] = "I"
+    IO_return["print"] = "V"
+    IO_return["println"] = "V"
