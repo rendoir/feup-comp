@@ -92,6 +92,7 @@ def processMethod(f_list, out, module):
 
 def processStmt(stmt, out, module):
     if(isinstance(stmt, Call)):
+        processArgsLoading(stmt, out, module)
         out.write("invokestatic ")
 
         path = ""
@@ -133,3 +134,15 @@ def initIO():
     IO_return["read"] = "I"
     IO_return["print"] = "V"
     IO_return["println"] = "V"
+
+
+def processArgsLoading(stmt, out, module):
+    for arg in stmt.args:
+        loadVar(arg, out, module)
+
+
+def loadVar(var, out, module):
+    if(isinstance(var, Variable)):
+        print(var.name)
+    else:
+        out.write("ldc " + var + NL)
