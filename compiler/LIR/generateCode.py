@@ -124,7 +124,19 @@ def processMethod(function, out, module):
     for i in range(len(function.code)):
         processStmt(function.code[i], out, module.name)
 
+    processReturn(function, out)
+
     out.write('return' + NL)
+
+def processReturn(function, out):
+    if function.ret_var is not None:
+        var = function.vars[1][function.ret_var]
+        index = __getLocalIndex(var.name)
+        if var.type == 'ARR':
+            out.write('aload ' + str(index) + NL)
+        else:
+            out.write('iload ' + str(index) + NL)
+
 
 def processStmt(stmt, out, mod_name):
     if(isinstance(stmt, Call)):
@@ -191,8 +203,12 @@ def __writeArrAccess(access, out):
         out.write('iload ' + str(__getLocalIndex(access.index.name)) + NL)
 
 def getArgString(arg):
+
     if isinstance(arg, str):
-        return 'Ljava/lang/String;'
+        if arg.isdigit():
+            return 'I'
+        else:
+            return 'Ljava/lang/String;'
     if(arg.type == "ARR"):
         return "[I"
     if(arg.type == "NUM"):
