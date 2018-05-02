@@ -25,13 +25,9 @@ def __getLocalIndex(var_name) -> int:
             return i
 
     else:
-        return len(local_variables)
-
-
-def __addLocalVar(var_name) -> int:
-    index = __getLocalIndex(var_name)
-    if index == -1:
+        size = len(local_variables)
         local_variables.append(var_name)
+        return size
 
 def generateCode(module, in_file):
     print('--- BEGIN GENERATING CODE ---')
@@ -119,6 +115,8 @@ def processMethod(function, out, module):
     del local_variables[:]
     for arg in function.vars[0]:
         local_variables.append(arg.name)
+    if function.ret_var is not None:
+        local_variables.append(function.ret_var)
 
     for i in range(len(function.code)):
         processStmt(function.code[i], out, module.name)
