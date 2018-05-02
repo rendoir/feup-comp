@@ -25,7 +25,6 @@ def __getLocalIndex(var_name) -> int:
             return i
 
     else:
-        print("How did semantics not catch this?")
         return len(local_variables)
 
 
@@ -126,16 +125,18 @@ def processMethod(function, out, module):
 
     processReturn(function, out)
 
-    out.write('return' + NL)
-
 def processReturn(function, out):
     if function.ret_var is not None:
         var = function.vars[1][function.ret_var]
         index = __getLocalIndex(var.name)
         if var.type == 'ARR':
             out.write('aload ' + str(index) + NL)
+            out.write('areturn' + NL)
         else:
             out.write('iload ' + str(index) + NL)
+            out.write('ireturn' + NL)
+    else:
+        out.write('return' + NL)
 
 
 def processStmt(stmt, out, mod_name):
@@ -177,7 +178,7 @@ def __writeTerm(term, out, mod_name):
     elif isinstance(term.value, ScalarAccess):
         __writeScalarAccess(term.value, out)
     else:
-        out.write('ldc ' + str(self.value) + NL)
+        out.write('ldc ' + str(term) + NL)
 
 def __writeCall(call, out, mod_name):
     processArgsLoading(call, out)
