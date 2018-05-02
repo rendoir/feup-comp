@@ -1,0 +1,12 @@
+Generate Code:
+Linha 180: Mudei self.value para term.value
+Linha 27: Aquele else está no sítio certo??
+
+Feedback:
+Não estamos a dar load/store em nenhuma scope sem ser a primeira.
+Falta "newarray int", whatever that is. Also, que print é aquele?? xD
+Eles costumam usar iconst para literais inteiros em vez do ldc mas acho que também dá com ldc
+
+No array2 o código gerado dá sempre load/store à var número 0 (dentro da main)
+
+Aval1 está quase perfeito, mas por alguma razão na função f os primeiros loads sao aloads em vez de iloads 

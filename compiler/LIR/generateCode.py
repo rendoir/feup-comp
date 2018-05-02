@@ -177,7 +177,7 @@ def __writeTerm(term, out, mod_name):
     elif isinstance(term.value, ScalarAccess):
         __writeScalarAccess(term.value, out)
     else:
-        out.write('ldc ' + str(self.value) + NL)
+        out.write('ldc ' + str(term.value) + NL)
 
 def __writeCall(call, out, mod_name):
     processArgsLoading(call, out)
