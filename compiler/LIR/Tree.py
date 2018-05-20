@@ -132,11 +132,18 @@ class Entry:
             (type, var) = getVar(latest_var, node)
             var_stack[-1] = var
 
-    def countStackLimit(self, code_lines) -> int:
+    def countStackLimit(code_lines) -> (int, int):
         max_limit = 0
         curr = 0
         for line in code_lines:
-            (new_curr, new_max) = line.stackCount(curr)
+            if isinstance(line, str):
+                if line.startswith('if_icmp'):
+                    (new_curr, new_max) = (curr - 2, max_limit)
+                else:
+                    continue
+            else:
+                (new_curr, new_max) = line.stackCount(curr)
+
             if new_curr >= 0:
                 curr = new_curr
             else:
@@ -145,7 +152,7 @@ class Entry:
                 max_limit = new_max
 
 
-        return max_limit
+        return (curr, max_limit)
     # Returns (new_count, maximum_count_inside_instruction)
     def stackCount(self, curr) -> (int, int):
         raise NotImplementedError("Entry::stackCount() not implemented!")
@@ -159,7 +166,7 @@ class FunctionEntry(Entry):
         self.stack = func_node.vars[0][:]
         self.code_lines = self._processStmtList(func_node.code, self.stack)
         self.max_locals = self._getMaxLocals()
-        self.max_stack = self.countStackLimit(self.code_lines)
+        self.max_stack = Entry.countStackLimit(self.code_lines)[1]
 
     def __str__(self) -> str:
         final_str = ''

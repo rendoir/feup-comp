@@ -1,4 +1,5 @@
 from ..HIR import Variable
+from . import Tree
 
 NL = '\n'
 
@@ -83,10 +84,13 @@ class Load(SimpleInstruction):
         return final_str
 
     def stackCount(self, curr) -> (int, int):
+        print(" LOAD ('" + str(self) + "') -> ", end='')
         if not self.negative:
-            return (curr + 1, curr + 1)
+            ret = (curr + 1, curr + 1)
         else:
-            return (curr + 1, curr + 2)
+            ret = (curr + 1, curr + 2)
+        print(ret)
+        return ret
 
 class Store(SimpleInstruction):
     def __init__(self, var_name, var_stack, in_array=False, new_arr=False):
@@ -110,13 +114,15 @@ class Store(SimpleInstruction):
         return final_str
 
     def stackCount(self, curr) -> (int, int):
+        print(" STORE ('" + str(self) + "') -> ", end='')
         if self.new_arr:
-            return (curr - 1, curr)
+            ret = (curr - 1, curr)
         elif self.in_array:
-            return (curr - 3, curr)
+            ret = (curr - 3, curr)
         else:
-            return (curr - 1, curr)
-
+            ret = (curr - 1, curr)
+        print(str(ret))
+        return ret
 
 class ComplexInstruction:
     def __init__(self):
@@ -140,6 +146,7 @@ class NewArr(ComplexInstruction):
         self.code.append('newarray int')
 
     def stackCount(self, curr) -> (int, int):
+        print(" NEW_ARR ('" + str(self) + "') -> " + str((curr, curr)))
         return (curr, curr)
 
 class ArrAccess(ComplexInstruction):
@@ -152,6 +159,7 @@ class ArrAccess(ComplexInstruction):
         self.code.append('iaload' + NL)
 
     def stackCount(self, curr) -> (int, int):
+        print(" ARR_ACCESS ('" + str(self) + "') -> " + str((curr + 1, curr + 2)))
         return (curr + 1, curr + 2)
 
 class Operator(ComplexInstruction):
@@ -163,7 +171,11 @@ class Operator(ComplexInstruction):
         self.code.append(operators[operator])
 
     def stackCount(self, curr) -> (int, int):
-        return (curr + 1, curr + 2)
+        print(" OPERATOR ('" + str(self) + "') -> ", end='')
+        ret = Tree.Entry.countStackLimit(self.code)
+
+        print(ret)
+        return ret
 
 
 class ConditionalBranch(ComplexInstruction):
@@ -191,9 +203,9 @@ class ConditionalBranch(ComplexInstruction):
 
         # Add Conditional
         for left_op in left:
-            self.template.append(str(left_op))
+            self.template.append(left_op)
         for right_op in right:
-            self.template.append(str(right_op))
+            self.template.append(right_op)
 
         self.template.append(self.cmp_to_if[self.cmp_operators_neg[operator]] + labels[0])
 
@@ -232,48 +244,18 @@ class IfBranching(ConditionalBranch):
         return final_str
 
     def stackCount(self, curr) -> (int, bool):
-        max_limit = curr
-        for code in self.template:
-            if not isinstance(code, str):
-                (new_curr, new_max) = code.stackCount(curr)
-                if new_curr >= 0:
-                    curr = new_curr
-                else:
-                    curr = 0
-                if new_max > max_limit:
-                    max_limit = new_max
-
-        temp_max = max_limit
-        temp_curr = curr
-        for code in self.true_code:
-            (new_curr, new_max) = code.stackCount(curr)
-            if new_curr >= 0:
-                curr = new_curr
-            else:
-                curr = 0
-            if new_max > max_limit:
-                max_limit = new_max
-        true_limit = curr
-        true_max = max_limit
-
-        max_limit = temp_max
-        curr = temp_curr
-        for code in self.true_code:
-            (new_curr, new_max) = code.stackCount(curr)
-            if new_curr >= 0:
-                curr = new_curr
-            else:
-                curr = 0
-            if new_max > max_limit:
-                max_limit = new_max
-        else_limit = curr
-        else_max = max_limit
-
-        if true_max >= else_max:
-            return (true_limit, true_max)
-        else:
-            return (else_limit, else_max)
-
+        print("-IF TEMPLATE")
+        (curr, max_curr)      = Tree.Entry.countStackLimit(self.template)
+        print("-IF TRUE")
+        (true_curr, true_max) = Tree.Entry.countStackLimit(self.true_code)
+        print("-IF ELSE")
+        (else_curr, else_max) = Tree.Entry.countStackLimit(self.else_code)
+        true_curr += curr
+        else_curr += curr
+        true_max += curr
+        else_max += curr
+        print("IF -> " + str((max(true_curr, else_curr), max(true_max, else_max))))
+        return (max(true_curr, else_curr), max(true_max, else_max))
 
 class WhileBranching(ConditionalBranch):
     # code = true_code
@@ -293,25 +275,10 @@ class WhileBranching(ConditionalBranch):
         return final_str
 
     def stackCount(self, curr) -> (int, bool):
-        max_limit = curr
-        for code in self.template:
-            if not isinstance(code, str):
-                (new_curr, new_max) = code.stackCount(curr)
-                if new_curr >= 0:
-                    curr = new_curr
-                else:
-                    curr = 0
-                if new_max > max_limit:
-                    max_limit = new_max
+        print("-WHILE TEMPLATE")
+        (curr, max_curr)      = Tree.Entry.countStackLimit(self.template)
+        print("-WHILE CODE")
+        (code_curr, code_max) = Tree.Entry.countStackLimit(self.code)
 
-        for code in self.template:
-            if not isinstance(code, str):
-                (new_curr, new_max) = code.stackCount(curr)
-                if new_curr >= 0:
-                    curr = new_curr
-                else:
-                    curr = 0
-                if new_max > max_limit:
-                    max_limit = new_max
-
-        return (curr, max_limit)
+        print("WHILE -> " + str((curr + code_curr, max_curr + code_max)))
+        return (curr + code_curr, max_curr + code_max)
