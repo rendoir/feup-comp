@@ -20,9 +20,14 @@ The parser code is in the .g4 file.
  * [VS Code :rage: ](https://marketplace.visualstudio.com/items?itemName=mike-lischke.vscode-antlr4)
  * [IDE :scream: ](http://www.antlr.org/tools.html)
 
-## TODO
+## Status
 
-### Symbol Table
+### Syntactic Analysis
+ - :white_check_mark: ANTLR handles all syntactic errors
+ - :white_check_mark: ANTLR handles reporting more than one syntactic error
+ - :x: Error message when no input given
+ - :x: Improve overall readability of error messages.
+   - 
 
  - :white_check_mark: Storing function variables in the same place.
 
@@ -38,14 +43,14 @@ The parser code is in the .g4 file.
 
  - :white_check_mark: Comparison between arrays is not possible
  - :white_check_mark: Check if type of arguments passed on function call is valid
- - :x: Branching declaration (variables declared/initialized within if/else must be checked)
+ - :white_check_mark: Branching declaration (variables declared/initialized within if/else must be checked)
 
  ### Code Generation
- - :x: Code for function calls
- - :x: Code for arithmetic expressions
-
-
-## Questions
-  - How can a variable be not initialized when it is impossible in an assign to do something like this:
-
-        not_initialized_var;
+ - :white_check_mark: Code for function calls
+ - :white_check_mark: Code for arithmetic expressions
+ - :white_check_mark: Code for conditional instructions
+ - :white_check_mark: Code for loops
+ - :white_check_mark: Code to deal with arrays
+ 
+ #### Additional Notes
+ - Generation of code might not handle branching declaration, it still needs more testing
