@@ -187,7 +187,7 @@ class FunctionEntry(Entry):
         return max
 
     def __functionHeader(self) -> str:
-        final_str = '.method static ' + self.name
+        final_str = '.method public static ' + self.name
         final_str += (self.__argsString(self.func_info.vars[0]) + NL)
         final_str += '.limit locals ' + str(self.max_locals) + NL
         final_str += '.limit stack ' + str(self.max_stack) + NL
