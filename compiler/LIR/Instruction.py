@@ -236,7 +236,10 @@ class IfBranching(ConditionalBranch):
         for code in self.template:
             if not isinstance(code, str):
                 (new_curr, new_max) = code.stackCount(curr)
-                curr = new_curr
+                if new_curr >= 0:
+                    curr = new_curr
+                else:
+                    curr = 0
                 if new_max > max_limit:
                     max_limit = new_max
 
@@ -244,7 +247,10 @@ class IfBranching(ConditionalBranch):
         temp_curr = curr
         for code in self.true_code:
             (new_curr, new_max) = code.stackCount(curr)
-            curr = new_curr
+            if new_curr >= 0:
+                curr = new_curr
+            else:
+                curr = 0
             if new_max > max_limit:
                 max_limit = new_max
         true_limit = curr
@@ -254,7 +260,10 @@ class IfBranching(ConditionalBranch):
         curr = temp_curr
         for code in self.true_code:
             (new_curr, new_max) = code.stackCount(curr)
-            curr = new_curr
+            if new_curr >= 0:
+                curr = new_curr
+            else:
+                curr = 0
             if new_max > max_limit:
                 max_limit = new_max
         else_limit = curr
@@ -288,14 +297,20 @@ class WhileBranching(ConditionalBranch):
         for code in self.template:
             if not isinstance(code, str):
                 (new_curr, new_max) = code.stackCount(curr)
-                curr = new_curr
+                if new_curr >= 0:
+                    curr = new_curr
+                else:
+                    curr = 0
                 if new_max > max_limit:
                     max_limit = new_max
 
         for code in self.template:
             if not isinstance(code, str):
                 (new_curr, new_max) = code.stackCount(curr)
-                curr = new_curr
+                if new_curr >= 0:
+                    curr = new_curr
+                else:
+                    curr = 0
                 if new_max > max_limit:
                     max_limit = new_max
 

@@ -137,7 +137,10 @@ class Entry:
         curr = 0
         for line in code_lines:
             (new_curr, new_max) = line.stackCount(curr)
-            curr = new_curr
+            if new_curr >= 0:
+                curr = new_curr
+            else:
+                curr = 0
             if new_max > max_limit:
                 max_limit = new_max
 
@@ -214,7 +217,6 @@ class CallEntry(Entry):
     def __init__(self, call_node, var_stack):
         self.args_load = []
         self.args_type = []
-        print("ARGS = " + str(call_node.args))
         for arg in call_node.args:
             if isinstance(arg, str):
                 self.args_load.append(Instruction.Load(arg))
@@ -293,7 +295,10 @@ class AssignEntry(Entry):
         max_limit = curr
         for code in (self.pre_code + self.right + [self.left]):
             (new_curr, new_max) = code.stackCount(curr)
-            curr = new_curr
+            if new_curr >= 0:
+                curr = new_curr
+            else:
+                curr = 0
             if new_max > max_limit:
                 max_limit = new_max
 

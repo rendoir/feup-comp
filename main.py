@@ -34,7 +34,6 @@ def main(argv):
         print(" ______ LLIR TREE ________ ")
         print(llir_tree)
         print("_______ ENND LLIR ________ ")
-        # generateCode(module,argv[1])
 
     sys.exit(1 if sem_errors else 0)
 
