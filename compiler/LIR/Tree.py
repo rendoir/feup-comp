@@ -13,6 +13,7 @@ ret_to_str = {
 '???': 'V'
 }
 
+
 def matchIOCall(func_name, args_list) -> list:
     io_functions = {
     'read': [[], INT],
@@ -53,12 +54,13 @@ def getVar(var_name, node) -> str:
 class LowLevelTree:
     def __init__(self, high_tree):
         self.functions = {}
-
+        self.mod_name = high_tree.name
         for (func_name, func_info) in high_tree.code.items():
             self.functions[func_name] = FunctionEntry(func_info, func_name)
 
     def __str__(self) -> str:
-        final_str = ''
+        final_str = '.class public ' + self.mod_name + NL
+        final_str += '.super java/lang/Object' + NL + NL
         for (func_name, func_info) in self.functions.items():
             final_str += str(func_info)
             final_str += NL + NL
@@ -100,7 +102,7 @@ class Entry:
         self.right = []
         if right_node.arr_size:
             arr_size = right_node.value[0]
-            self.left = Instruction.NewArr(arr_size.getVarName(), var_stack, arr_size.value.size)
+            self.right.append(Instruction.NewArr(arr_size.getVarName(), var_stack, arr_size.value.size))
 
         elif right_node.needs_op:
             (left_term, right_term) = (right_node.value[0], right_node.value[1])
@@ -271,7 +273,7 @@ class AssignEntry(Entry):
             self.pre_code.append(Instruction.Load(store_name, var_stack, True))
             self.pre_code.append(Instruction.Load(assign_node.left.access.index, var_stack, True))
 
-        self.left = Instruction.Store(store_name, var_stack, in_array)
+        self.left = Instruction.Store(store_name, var_stack, in_array, assign_node.right.arr_size)
         self._updateStack(var_stack, assign_node.parent)
         self._processRight(assign_node.right, var_stack)
 
@@ -281,11 +283,10 @@ class AssignEntry(Entry):
             final_str += str(pre)
 
         for right_op in self.right:
-            final_str += str(right_op)
+            final_str += str(right_op) + NL
 
 
         final_str += str(self.left)
-
         return final_str
 
     def stackCount(self, curr) -> (int, bool):
@@ -309,15 +310,15 @@ class ComparisonEntry(Entry):
     def __str__(self) -> str:
         return str(self.code)
 
-
+while_label = 0
 class WhileEntry(ComparisonEntry):
-    label_id = 0
     label_start = 'while_start#'
     label_end = 'while_end#'
 
     def __init__(self, while_node, stack):
-        labels = [(self.label_end + str(self.label_id)), (self.label_start + str(self.label_id))]
-        self.label_id += 1
+        global while_label
+        labels = [(self.label_end + str(while_label)), (self.label_start + str(while_label))]
+        while_label += 1
 
         super(WhileEntry, self).__init__(while_node, stack, labels)
         self.stmts = self._processStmtList(while_node.code, stack)
@@ -336,14 +337,15 @@ class WhileEntry(ComparisonEntry):
 
         return max
 
+if_label = 0
 class IfEntry(ComparisonEntry):
-    label_id = 0
     label_start = 'else_start#'
     label_end = 'if_end#'
 
     def __init__(self, if_node, stack):
-        labels = [(self.label_start + str(self.label_id)), (self.label_end + str(self.label_id))]
-        self.label_id += 1
+        global if_label
+        labels = [(self.label_start + str(if_label)), (self.label_end + str(if_label))]
+        if_label += 1
 
         super(IfEntry, self).__init__(if_node, stack, labels)
 

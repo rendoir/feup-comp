@@ -89,29 +89,34 @@ class Load(SimpleInstruction):
             return (curr + 1, curr + 2)
 
 class Store(SimpleInstruction):
-    def __init__(self, var_name, var_stack, in_array=False):
+    def __init__(self, var_name, var_stack, in_array=False, new_arr=False):
         try:
             super(Store, self).__init__(var_name, var_stack)
         except AssertionError:
             self.var_access = str(len(var_stack))
             var_stack.append(var_name)
 
-
+        self.new_arr = new_arr
         self.in_array = in_array
 
     def __str__(self):
-        if not self.in_array:
-            final_str = 'istore ' + self.var_access + NL
-        else:
+        if self.new_arr:
+            final_str = 'astore ' + self.var_access + NL
+        elif self.in_array:
             final_str = 'iastore'
+        else:
+            final_str = 'istore ' + self.var_access + NL
 
         return final_str
 
     def stackCount(self, curr) -> (int, int):
-        if not self.in_array:
+        if self.new_arr:
             return (curr - 1, curr)
-        else:
+        elif self.in_array:
             return (curr - 3, curr)
+        else:
+            return (curr - 1, curr)
+
 
 class ComplexInstruction:
     def __init__(self):
@@ -132,7 +137,7 @@ class NewArr(ComplexInstruction):
     def __init__(self, var_name, var_stack, is_length):
         super(NewArr, self).__init__()
         self.code.append(Load(var_name, var_stack, True, is_length))
-        self.code.append('anewarray I')
+        self.code.append('newarray int')
 
     def stackCount(self, curr) -> (int, int):
         return (curr, curr)
