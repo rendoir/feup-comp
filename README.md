@@ -26,10 +26,7 @@ The parser code is in the .g4 file.
  - :white_check_mark: ANTLR handles all syntactic errors
  - :white_check_mark: ANTLR handles reporting more than one syntactic error
  - :x: Error message when no input given
- - :x: Improve overall readability of error messages.
-   - 
-
- - :white_check_mark: Storing function variables in the same place.
+ - :white_check_mark: Improve overall readability of error messages.
 
 ### Semantic Analysis
 
