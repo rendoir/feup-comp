@@ -40,6 +40,14 @@ class ErrorPrinter:
         self.errors = []
         self.warnings = []
 
+    def cropString(string: str) -> (str, int):
+        ltrim = string.lstrip()
+        left_trimmed = len(string) - len(ltrim)
+
+        alltrim = ltrim.strip()
+
+        return (alltrim, left_trimmed)
+
     def __addError(self, line, col, simple_msg, detail_msg):
         if __debug__:
             assert isinstance(line, int), "ErrorPrinter.reportError() 'line' should be 'int'"
@@ -49,13 +57,13 @@ class ErrorPrinter:
 
         error_message = ""
 
-        (err_txt, del_spaces) = ErrorPrinter.__cropString(self.lines[line-1])
+        (err_txt, del_spaces) = ErrorPrinter.cropString(self.lines[line-1])
         line_col =  str(line) + ":" + str(col[0])
 
         error_message += "\n" + BOLD + simple_msg + "\n" + RESET
-        error_message += RED + line_col + RESET + " | " + err_txt + "\n"
+        error_message += RED + line_col + RESET + " |  " + err_txt + "\n"
 
-        jump = len(line_col) + 3
+        jump = len(line_col) + 4
 
         col_start = col[0] - del_spaces
         col_end = col[1] - del_spaces
@@ -73,14 +81,6 @@ class ErrorPrinter:
     def __suggestion(text: str) -> str:
         return "\n " + BOLD + "---> " + RESET + text
 
-    def __cropString(string: str) -> (str, int):
-        ltrim = string.lstrip()
-        left_trimmed = len(string) - len(ltrim)
-
-        alltrim = ltrim.strip()
-
-        return (alltrim, left_trimmed)
-
     def __addWarning(self, line, col, simple_msg, detail_msg):
         if __debug__:
             assert isinstance(line, int), "ErrorPrinter.reportError() 'line' should be 'int'"
@@ -90,7 +90,7 @@ class ErrorPrinter:
 
         warn_msg = ""
 
-        (err_txt, del_spaces) = ErrorPrinter.__cropString(self.lines[line-1])
+        (err_txt, del_spaces) = ErrorPrinter.cropString(self.lines[line-1])
         line_col =  str(line) + ":" + str(col[0])
 
         warn_msg += "\n" + UNDERLINE + simple_msg + "\n" + RESET

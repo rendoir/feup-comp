@@ -16,7 +16,7 @@ def main(argv):
     lexer = yalLexer(input)
     stream = CommonTokenStream(lexer)
     parser = yalRealParser(stream)
-    parser.addErrorListener(yalErrorListener())
+    parser._listeners = [yalErrorListener()]
     parser.addParseListener(yalParserListener())
     tree = parser.module()
 
