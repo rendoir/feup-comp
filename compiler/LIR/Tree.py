@@ -151,7 +151,8 @@ class FunctionEntry(Entry):
         self.func_info = func_node
         self.name = func_name
 
-        self.code_lines = self._processStmtList(func_node.code, func_node.vars[0][:])
+        self.stack = func_node.vars[0][:]
+        self.code_lines = self._processStmtList(func_node.code, self.stack)
         self.max_locals = self._getMaxLocals()
         self.max_stack = self.countStackLimit(self.code_lines)
 
@@ -193,13 +194,19 @@ class FunctionEntry(Entry):
             return final_str
 
     def __returnString(self) -> str:
-        final_str = 'return\n.end method'
-        if self.func_info.ret_str == 'ARR':
-            final_str = 'a' + final_str
-        elif self.func_info.ret_str == 'NUM':
-            final_str = 'i' + final_str
+        final_str = ''
+        if self.func_info.ret_var is not None:
+            final_str += str(Instruction.Load(self.func_info.ret_var, self.stack))
 
-        return final_str
+
+        if self.func_info.ret_str == 'ARR':
+            final_str += 'areturn' + NL
+        elif self.func_info.ret_str == 'NUM':
+            final_str += 'ireturn' + NL
+        else:
+            final_str += 'return' + NL
+
+        return (final_str + '.end method' + NL)
 
 class CallEntry(Entry):
     def __init__(self, call_node, var_stack):
