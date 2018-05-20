@@ -518,10 +518,10 @@ class Module(Scope):
             assert isinstance(func, yalParser.FunctionContext), "Module.__addFuncError() 'func'\n - Expected: 'yalParser.FunctionContext'\n - Got: " + str(type(func))
             assert isinstance(printer, ErrorPrinter), "Module.__addFuncError() 'printer'\n - Expected: 'ErrorPrinter'\n - Got: " + str(type(printer))
 
-        if isinstance(func.children[0], str) and isinstance(func.children[1], str):
-            printer.funcRedeclaration(func.children[1].getLine(), func.children[1].getColRange(), str(func.children[1]))
+        if not isinstance(func.children[0], tree.Tree.TerminalNodeImpl):
+            printer.funcRedeclaration(func.getLine(), func.getColRange(), str(func.children[1]))
         else:
-            printer.funcRedeclaration(func.children[0].getLine(), func.children[0].getColRange(), str(func.children[0]))
+            printer.funcRedeclaration(func.getLine(), func.getColRange(), str(func.children[0]))
 
     def __str__(self) -> str:
         string = "Module '" + self.name + "':\n"

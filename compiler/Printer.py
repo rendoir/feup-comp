@@ -193,7 +193,8 @@ class ErrorPrinter:
         self.__addError(line, cols, NEG_SIZE, "It is not possible to create an array with " + size + " positions!" + ErrorPrinter.__suggestion("Array size must be a positive number"))
 
     def funcRedeclaration(self, line, cols, name):
-        self.__addError(line, cols, FUNC_REDECLARED, "Function '" + name + "' redeclared")
+        name_start = self.lines[line-1].find(name)
+        self.__addError(line, (name_start, name_start + len(name) - 1), FUNC_REDECLARED, "Function '" + name + "' redeclared")
 
     def arrSizeFromArr(self, line, cols, name):
         self.__addError(line, cols, UNKNOWN_OP, "Used variable '" + name + "' which is of type 'ARR', as array size!" + ErrorPrinter.__suggestion("Maybe you mean '" + name +  ".size'"))

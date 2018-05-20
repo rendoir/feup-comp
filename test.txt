@@ -20,7 +20,7 @@ module program1 {
     io.println("min: ", mn);
   }
 
-   function a[]=det(d[], A[], b) {
+  function a[]=det(d[], A[], b) {
     wtf = data + c;       // Error 5 cant use 2 arrays
     i = + 2;
     d.size = 256;         // Error 6 cant assign size directly
@@ -55,5 +55,9 @@ module program1 {
       mx = library1.max(a, b);
       mn = library1.min(a, b);
     }
-   }
+  }
+
+  function det(a) {
+    a = 1;
+  }
 }
