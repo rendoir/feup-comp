@@ -29,7 +29,12 @@ def main(argv):
 
     sem_errors = printer.printMessages()
     if not sem_errors:
-        generateCode(module,argv[1])
+        llir_tree = LowLevelTree(module)
+
+        print(" ______ LLIR TREE ________ ")
+        print(llir_tree)
+        print("_______ ENND LLIR ________ ")
+        # generateCode(module,argv[1])
 
     sys.exit(1 if sem_errors else 0)
 

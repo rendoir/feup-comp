@@ -22,12 +22,19 @@ class Scope:
         #Used only for semantic checks
         self.branched_vars = {}
 
+    def modName(self):
+        temp = self
+        while temp.parent is not None:
+            temp = temp.parent
+
+        return temp.name
+
     def addVar(self, name, var):
         raise NotImplementedError( "Should have implemented this" )
 
     def getFunctions(scope) -> dict:
         if __debug__:
-            assert isinstance(scope, Scope) or scope is None, "Scope.getFunctions() 'scope'\n - Expected: 'Scope'\n - Got: " + str(type(ret_var))
+            assert isinstance(scope, Scope) or scope is None, "Scope.getFunctions() 'scope'\n - Expected: 'Scope'\n - Got: " + str(type(scope))
 
         parent = scope.parent
         while parent.parent is not None:
@@ -79,6 +86,9 @@ class Scope:
             temp_scope = temp_scope.parent
 
         return False
+
+    def varHere(self, var_name) -> Variable:
+        return self.vars[var_name]
 
 # 20 maças, cortar laminadas ++ fino, marshmallows 1 por cada pessoa (+- 100), espeto para por marshmallows (dar para pelos menos 15),
 
@@ -161,6 +171,13 @@ class Function(Scope):
 
         for stmt in stmts:
             self.code.append(Stmt.parseStmt(stmt, self))
+
+    def varHere(self, var_name) -> bool:
+        for var in self.vars[0]:
+            if var.name == var_name:
+                return var
+
+        return self.vars[1][var_name]
 
     def __str__(self) -> str:
         string = "("
@@ -460,8 +477,11 @@ class Module(Scope):
 
         if not isinstance(node.children[-2], tree.Tree.TerminalNodeImpl): # Check if function has arguments
             vars = node.children[-2]
+        function = Function(ret_var, vars, stmts, self)
+        if func_name == 'main':
+            function.vars[0].append(ArrayVariable('args', -1, None, None))
 
-        return (func_name, Function(ret_var, vars, stmts, self))
+        return (func_name, function)
 
 
     def semanticCheck(self, printer):

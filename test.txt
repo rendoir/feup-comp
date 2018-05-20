@@ -13,7 +13,7 @@ module program1 {
   function main() {
     wut = main();
     vars = [2];
-    varss = det(vars, vars, N);
+    varss = det(vars, vars, 1);
     varsss = 2;
     cenas(varss, vars, varsss);   //Error 4 function does not exist
     io.println("max: ", mx);
@@ -24,7 +24,7 @@ module program1 {
     wtf = data + c;       // Error 5 cant use 2 arrays
     i = + 2;
     d.size = 256;         // Error 6 cant assign size directly
-    if (i == 2) {
+    if (i < 2) {
       variable1 = 1;
     }
     else {
@@ -51,7 +51,7 @@ module program1 {
     new_var = undef_var;        // Error 9 cannot infer type
 
     while (data < c) {          // Error 10 cant use 2 arrays
-      a = d[i]; i=i+1; b=d[i];  
+      a = d[i]; i=i+1; b=d[i];
       mx = library1.max(a, b);
       mn = library1.min(a, b);
     }

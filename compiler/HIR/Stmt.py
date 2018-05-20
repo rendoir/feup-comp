@@ -32,8 +32,6 @@ def getVar(var_name, vars_list) -> Variable:
         assert isinstance(var_name, str), "Stmt.getVar() 'var_name'\n - Expected 'str'\n - Got: " + str(type(var_name))
         assert isinstance(vars_list, list), "Stmt.getVar() 'vars_list'\n - Expected 'list'\n - Got: " + str(type(vars_list))
 
-    # print("GETTING = " + str(var_name))
-    # print(vars_list[0])
 
     for var_list in vars_list:
         if isinstance(var_list, dict):
@@ -48,6 +46,23 @@ def getVar(var_name, vars_list) -> Variable:
         return None
     else:
         return var_name
+
+def varScope(var_name, vars_list) -> str:
+    for i in range(len(vars_list)):
+        var_list = vars_list[i]
+
+        if isinstance(var_list, dict):
+            if var_name in var_list:
+                if (i + 1) >= len(vars_list):
+                    return 'F'
+                else:
+                    return 'L'
+
+
+        else:
+            for var in var_list:
+                if var_name == var.name:
+                    return 'P'
 
 class Statement:
     def __init__(self, node, parent):
@@ -172,7 +187,7 @@ class ExprTest(Statement):
             assert isinstance(node, yalParser.ExprtestContext), "ExprTest.__init__() 'node'\n - Expected 'yalParser.ExprtestContext'\n - Got: " + str(type(node))
             assert isinstance(parent, Scope), "ExprTest.__init__() 'parent'\n - Expected 'Scope'\n - Got: " + str(type(parent))
 
-        self.op = node.children[1]
+        self.op = str(node.children[1])
         self.left = LeftOP(node.children[0], parent)
         self.right = RightOP(node.children[2], parent)
 
@@ -192,7 +207,7 @@ class ExprTest(Statement):
             if is_arr and right_type == 'ARR':
                 printer.unknownComp(self.line, self.cols, self.left.access.var, str(self.op), self.right.value[0].value.var)
             elif (not is_arr and right_type == 'ARR') or (is_arr and right_type == 'NUM'):
-                printer.opDiffTypes(self.line, self.cold, ('ARR' if is_arr else 'NUM'), self.op, right_type)
+                printer.opDiffTypes(self.line, self.cols, ('ARR' if is_arr else 'NUM'), self.op, right_type)
 
 
 class LeftOP(Statement):
@@ -208,7 +223,7 @@ class LeftOP(Statement):
         elif (isinstance(child, yalParser.Scalar_accessContext)):
             self.access = ScalarAccess(child, parent)
         else:
-            print("WUUUUUUUUUUUTTTTTT??????!!!!!!!");
+            raise StandardError("LeftOP access neither Array nor Scalar!");
 
     def checkSemantics(self, printer, var_list, report_existance):
         if __debug__:
@@ -392,14 +407,12 @@ class ArrayAccess(Statement):
                     printer.undefVar(self.line, self.cols, self.index)
 
         var = getVar(self.var, var_list)
-
         if var is not None:
             if not isinstance(var, ArrayVariable):
                 printer.numberIndexing(self.line, self.cols, var.name, var.type)
             elif self.index.isdigit() and not var.validAccess(int(self.index)):
                 printer.outOfBounds(self.line, self.cols, var.name, var.size, self.index)
-            else:
-                self.index = var
+
         elif report_existance:
             if Scope.isBranchVar(self.parent, self.var):
                 printer.branchingDecl(self.line, self.cols, self.var)
@@ -409,18 +422,6 @@ class ArrayAccess(Statement):
 
     def __str__(self) -> str:
         return self.var + "[" + self.index + "]"
-
-    def toLIR(self) -> str:
-        if __debug__:
-            assert isinstance(parent, Instruction), "ArrayAccess.checkSemantics() 'parent'\n - Expected 'Instruction'\n - Got: " + str(type(parent))
-
-        return ('LDA', self.var)
-
-        return 'LDA ' + self.var + ' ' + self.index
-
-    def __indexToLIR(self):
-        if isinstance(self.index, str):
-            scope = varScope(self.index, vars_list)
 
 
 class ScalarAccess(Statement):
@@ -516,6 +517,12 @@ class ArraySize(Statement):
             self.value.checkSemantics(printer, var_list, True)
         elif self.value < 0:
             printer.negSize(self.line, self.cols, self.value)
+
+    def getVarName(self):
+        if self.access:
+            return self.value.var
+        else:
+            return self.value
 
     def getValue(self, var_list) -> int:
         if self.access:

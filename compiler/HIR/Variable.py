@@ -54,6 +54,9 @@ class NumberVariable (Variable):
         if self.init is None:
             self.init = init
 
+    def toLIR(self):
+        return 'I'
+
 class ArrayVariable(Variable):
     def __init__(self, name: str, size: int, decl: int, init: int):
         super(ArrayVariable, self).__init__(name, "ARR", decl, init)
@@ -71,6 +74,9 @@ class ArrayVariable(Variable):
 
     def setInit(self, value: int, init: int):
         print("How was this called!?")
+
+    def toLIR(self):
+        return '[I'
 
 class UndefinedVariable(Variable):
     def __init__(self, name=None, size=None, decl=None, init=None):
