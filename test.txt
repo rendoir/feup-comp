@@ -59,7 +59,9 @@ module program1 {
 
   function det(a) {
     if (a < 0) {
-
     }
+    else {}
   }
+
+  function empty() {}
 }

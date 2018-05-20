@@ -167,10 +167,11 @@ class Function(Scope):
     def __addStmts(self, stmts: List[yalParser.Stmt_listContext]):
         from . import Stmt
         if __debug__:
-            assert isinstance(stmts, list), "Function.__addStmts() 'stmts'\n - Expected: 'list'\n - Got: " + str(type(stmts))
+            assert (isinstance(stmts, list) or stmts is None), "Function.__addStmts() 'stmts'\n - Expected: 'list'\n - Got: " + str(type(stmts))
 
-        for stmt in stmts:
-            self.code.append(Stmt.parseStmt(stmt, self))
+        if stmts is not None:
+            for stmt in stmts:
+                self.code.append(Stmt.parseStmt(stmt, self))
 
     def varHere(self, var_name) -> bool:
         for var in self.vars[0]:
