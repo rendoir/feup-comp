@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 from antlr4 import *
 from antlr_yal import *
 from compiler import *
@@ -11,6 +12,10 @@ EXTENSION = '.temp'
 # So since the parser has rules such as 'vector', 'expression' and 'pyClass'
 # It generates a method to parse each one of these
 def main(argv):
+    if not correctUsage(argv):
+        printUsage()
+        return
+
     input = FileStream(argv[1])
     printer = Printer.ErrorPrinter(input)
     lexer = yalLexer(input)
@@ -46,6 +51,22 @@ def writeToFile(file_name, content):
     with open(file_name, 'w+') as output:
         output.write(content)
 
+def correctUsage(argv) -> bool:
+    if len(argv) is 2:
+        if not Path(argv[1]).is_file():
+            print("File '" + argv[1] + "' does not exist!")
+            return False
+    else:
+        if len(argv) > 2:
+            print("Too many arguments!")
+        else:
+            print("Not enough arguments!")
+        return False
+
+    return True
+
+def printUsage():
+    print("Usage:\n    python3 main.py <file_name>\n")
 
 if __name__ == '__main__':
     main(sys.argv)
