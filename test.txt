@@ -58,6 +58,8 @@ module program1 {
   }
 
   function det(a) {
-    a = 1;
+    if (a < 0) {
+
+    }
   }
 }

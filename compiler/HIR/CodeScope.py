@@ -213,10 +213,11 @@ class If(Scope):
         self.test = Stmt.ExprTest(node.children[0], self)
         self.else_code = []
 
-        for stmt in node.children[1].children:
-            self.code.append(Stmt.parseStmt(stmt, self))
+        if node.children[1].children is not None:
+            for stmt in node.children[1].children:
+                self.code.append(Stmt.parseStmt(stmt, self))
 
-        if node.getChildCount() is 3:
+        if node.getChildCount() is 3 and node.children[2].children[0].children is not None:
             for stmt in node.children[2].children[0].children:
                 self.else_code.append(Stmt.parseStmt(stmt, self))
 
