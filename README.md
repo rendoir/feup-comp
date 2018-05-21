@@ -25,7 +25,7 @@ The parser code is in the .g4 file.
 ### Syntactic Analysis
  - :white_check_mark: ANTLR handles all syntactic errors
  - :white_check_mark: ANTLR handles reporting more than one syntactic error
- - :x: Error message when no input given
+ - :white_check_mark: Error message when no input given
  - :white_check_mark: Improve overall readability of error messages.
 
 ### Semantic Analysis
@@ -51,3 +51,4 @@ The parser code is in the .g4 file.
  
  #### Additional Notes
  - Generation of code might not handle branching declaration, it still needs more testing
+ - limit locals assumes that the first argument of main function is constantly used
