@@ -1,0 +1,35 @@
+.class public aval1
+.super java/lang/Object
+
+.method public static main([Ljava/lang/String;)V
+.limit locals 2
+.limit stack 2
+
+ldc 2
+ldc 3
+invokestatic aval1/f(I)I
+
+istore 1
+
+iload 1
+invokestatic io/println()V
+
+return
+.end method
+
+
+.method public static f(II)I
+.limit locals 3
+.limit stack 2
+
+iload 0
+iload 1
+imul 
+
+istore 2
+
+iload 2
+ireturn
+.end method
+
+

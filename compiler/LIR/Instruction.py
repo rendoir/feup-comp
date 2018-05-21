@@ -8,7 +8,7 @@ operators = {
     '/':    ('idiv ' + NL),
     '<<':   ('ishl ' + NL),
     '>>':   ('ishr ' + NL),
-    '>>>':  ('WTF IS THIS???' + NL),
+    '>>>':  ('iushr' + NL),
     '&':    ('iand ' + NL),
     '|':    ('ior ' + NL),
     '^':    ('ixor ' + NL),

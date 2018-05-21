@@ -75,6 +75,7 @@ class Entry:
     def _processStmtList(self, stmts, var_stack) -> (int, list):
         lines = []
         for stmt in stmts:
+            print("STACK SIZE = " + str(len(var_stack)))
             stack_size = len(var_stack)
             if stack_size > self.max_locals:
                 self.max_locals = stack_size
@@ -87,6 +88,10 @@ class Entry:
                 lines.append(AssignEntry(stmt, var_stack))
             else: # Call
                 lines.append(CallEntry(stmt, var_stack))
+
+        stack_size = len(var_stack)
+        if stack_size > self.max_locals:
+            self.max_locals = stack_size
 
         return lines
 
@@ -164,6 +169,7 @@ class FunctionEntry(Entry):
         self.name = func_name
 
         self.stack = func_node.vars[0][:]
+        print("ARGS = " + str(self.stack))
         self.code_lines = self._processStmtList(func_node.code, self.stack)
         self.max_locals = self._getMaxLocals()
         self.max_stack = Entry.countStackLimit(self.code_lines)[1]
@@ -261,7 +267,7 @@ class CallEntry(Entry):
 
         final_str += '('
         for type in self.args_type:
-            final_str += type + ';'
+            final_str += type
 
         final_str = final_str[:-1]
         final_str += ')' + self.ret_type
