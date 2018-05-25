@@ -1,9 +1,9 @@
 .class public programa1
 .super java/lang/Object
 
-.field static data [I 
-.field static mx I 
-.field static mn I 
+.field static data [I
+.field static mx I
+.field static mn I
 .method public static det([I)V
 .limit locals 7
 .limit stack 2
@@ -68,11 +68,11 @@ return
 .end method
 
 
-.method static public <clinit>()V 
+.method static public <clinit>()V
 .limit stack 1
 .limit locals 1
 bipush 100
-newarray int 
-putstatic programa1/data [I 
-return 
-.end method 
+newarray int
+putstatic programa1/data [I
+return
+.end method
