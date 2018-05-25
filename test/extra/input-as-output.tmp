@@ -1,0 +1,28 @@
+.class public inputAsOutput
+.super java/lang/Object
+
+.method public static f(I)I
+.limit locals 1
+.limit stack 0
+
+iload 0
+ireturn
+.end method
+
+
+.method public static main([Ljava/lang/String;)V
+.limit locals 2
+.limit stack 1
+
+ldc 1
+invokestatic inputAsOutput/f()I
+
+istore 1
+
+iload 1
+invokestatic io/println()V
+
+return
+.end method
+
+

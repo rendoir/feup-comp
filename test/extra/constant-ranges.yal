@@ -1,0 +1,23 @@
+module constantRanges {
+	function f() {
+		a = 5; // iconst
+		b = -1; // iconst
+		c = 6; // does not fit in iconst
+		d = 128; // does not fit in bipush
+		e = -129; // does not fit in bipush
+		f = 32768; // does not fit in sipush
+		g = -32769; // does not fit in sipush
+
+		io.println(a); // 5
+		io.println(b); // -1
+		io.println(c); // 6
+		io.println(d); // 128
+		io.println(e); // -129
+		io.println(f); // 32768
+		io.println(g); // -32769
+	}
+
+	function main() {
+		f();
+	}
+}

@@ -1,0 +1,14 @@
+// Should work with -r=1, use a single local
+
+module registerTest {
+	function y = f(a) {
+		b = a + 1;
+		c = b + 2;
+		d = c + 3;
+		y = d + 1;
+	}
+	function main() {
+		y = f(1);
+		io.println(y); // 8
+	}
+}

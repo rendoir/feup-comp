@@ -1,0 +1,3 @@
+module errorUninitializedOutput {
+	function y = f() {} // Error: y was not initialized before being used.
+}

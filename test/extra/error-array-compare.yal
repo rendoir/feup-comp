@@ -1,0 +1,9 @@
+module errorArrayCompare {
+	function y = f(a[], b[]) {
+		if (a > b) {
+			y = 1;
+		} else {
+			y = 2;
+		}
+	}
+}

@@ -1,0 +1,10 @@
+module inputAsOutput {
+	function y = f(y) {
+		// Ok
+	}
+
+	function main() {
+		a = f(1);
+		io.println(a); // 1
+	}
+}

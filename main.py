@@ -6,7 +6,7 @@ from compiler import *
 
 from pprint import pprint
 
-EXTENSION = '.temp'
+EXTENSION = '.tmp'
 
 # ParserParser class will have a method for each 'rule' in the parser.
 # So since the parser has rules such as 'vector', 'expression' and 'pyClass'

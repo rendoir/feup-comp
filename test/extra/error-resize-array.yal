@@ -1,0 +1,5 @@
+module errorResizeArray {
+	function f(a[]) {
+		a.size = 1; // error
+	}
+}

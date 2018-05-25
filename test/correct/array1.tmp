@@ -1,0 +1,79 @@
+.class public array1
+.super java/lang/Object
+
+.method public static print_array(I)V
+.limit locals 4
+.limit stack 3
+
+iload 0
+newarray int
+astore 1
+
+ldc 0
+
+istore 2
+
+while_start#0:
+iload 2
+
+iload 0
+
+if_icmpge while_end#0
+aload 1
+iload 2
+iload 2
+
+iastore
+iload 2
+ldc 1
+iadd 
+
+istore 2
+
+goto while_start#0
+while_end#0:
+
+ldc 0
+
+istore 2
+
+while_start#1:
+iload 2
+
+iload 0
+
+if_icmpge while_end#1
+aload 1
+iload 2
+iaload
+
+istore 3
+
+ldc "a: "
+iload 3
+invokestatic io/print(Ljava/lang/String)V
+
+iload 2
+ldc 1
+iadd 
+
+istore 2
+
+goto while_start#1
+while_end#1:
+
+return
+.end method
+
+
+.method public static main([Ljava/lang/String;)V
+.limit locals 1
+.limit stack 1
+
+ldc 10
+invokestatic array1/print_array()V
+
+return
+.end method
+
+

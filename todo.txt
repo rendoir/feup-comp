@@ -1,0 +1,49 @@
+General:
+1 - Remove prints.
+
+
+Code generation:
+1 - io function arguments are not being parsed (possibly same error as 2):
+  In file correct/array1
+    Should be "invokestatic io/print(Ljava/lang/String;I)V"
+    Output is "invokestatic io/print(Ljava/lang/String)V"
+
+2 - function arguments missing in calls (probably only the first or last one is missing):
+  In file correct/array1
+    Should be "invokestatic array1/print_array(I)V"
+    Output is "invokestatic array1/print_array()V"
+  In file correct/aval1
+    Should be "invokestatic aval1/f(II)I"
+    Output is "invokestatic aval1/f(I)I"
+
+3 - compiler crashes on certain files:
+  correct/aval2
+  correct/aval3
+  correct/aval4
+  correct/aval5
+  correct/aval6
+  correct/aval7
+  correct/aval8
+  correct/library1
+  correct/max_array
+  correct/max
+  correct/max1
+  correct/maxmin
+  correct/programa1
+  correct/programa2
+  correct/programa3
+  correct/sqrt
+  extra/call-main
+  extra/error-uninitialized-output
+  extra/nested-branch
+  extra/stack-size
+
+4 - negative constants being treated as positive:
+  In file test/constant-ranges
+    Should be "sipush -129"
+    Output is "ldc 129"
+
+5 - missing '(' in function call (could be related to problems 1 and 2):
+  In file test/constant-ranges
+    Should be "invokestatic constantRanges/f()V"
+    Output is "invokestatic constantRanges/f)V"

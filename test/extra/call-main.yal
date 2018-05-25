@@ -1,0 +1,14 @@
+module callMain {
+	x = 1;
+	function f() {
+		if (x > 0) {
+			x = x - 1;
+			main();
+		}
+	}
+
+	function main() {
+		io.println("Call main");
+		f();
+	}
+}
