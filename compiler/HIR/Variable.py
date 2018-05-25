@@ -22,13 +22,11 @@ class Variable:
 
         return first_type != second_type and first_type != '???' and second_type != '???'
 
-
     def diffType(self, other) -> bool:
         if __debug__:
             assert isinstance(other, Variable), "Variable.diffType() 'other'\n - Expected 'Variable'\n - Got: " + str(type(other))
 
         return (self.type != other.type and self.type != "???" and other.type != "???")
-
 
     def isLiteral(var: str) -> bool:
         if not isinstance(var, str):
@@ -41,6 +39,9 @@ class Variable:
 
 
         return False
+
+    def toLIR() -> str:
+        raise NotImplementedError("Should have implemented Variable::toLIR()")
 
 class NumberVariable (Variable):
     def __init__(self, name: str, value: int, decl: int, init: int):

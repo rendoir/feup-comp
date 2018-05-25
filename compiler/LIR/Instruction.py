@@ -68,7 +68,7 @@ class Load(SimpleInstruction):
 
 
         if self.const is not None :
-            final_str += 'ldc ' + self.const + NL
+            final_str += 'ldc ' + str(self.const) + NL
         else:
             if self.var.type == 'ARR':
                 final_str = 'aload ' + self.var_access + NL
@@ -79,6 +79,7 @@ class Load(SimpleInstruction):
                 final_str = 'iload ' + self.var_access + NL
 
         if self.negative:
+            final_str = final_str[:-1]
             final_str += 'isub' + NL
 
         return final_str
@@ -88,7 +89,6 @@ class Load(SimpleInstruction):
             ret = (curr + 1, curr + 1)
         else:
             ret = (curr + 1, curr + 2)
-        print(ret)
         return ret
 
 class Store(SimpleInstruction):
@@ -104,13 +104,11 @@ class Store(SimpleInstruction):
 
     def __str__(self):
         if self.new_arr:
-            final_str = 'astore ' + self.var_access + NL
+            return 'astore ' + self.var_access + NL
         elif self.in_array:
-            final_str = 'iastore'
+            return 'iastore' + NL
         else:
-            final_str = 'istore ' + self.var_access + NL
-
-        return final_str
+            return 'istore ' + self.var_access + NL
 
     def stackCount(self, curr) -> (int, int):
         if self.new_arr:
@@ -140,10 +138,9 @@ class NewArr(ComplexInstruction):
     def __init__(self, var_name, var_stack, is_length):
         super(NewArr, self).__init__()
         self.code.append(Load(var_name, var_stack, True, is_length))
-        self.code.append('newarray int')
+        self.code.append('newarray int' + NL)
 
     def stackCount(self, curr) -> (int, int):
-        print(" NEW_ARR ('" + str(self) + "') -> " + str((curr, curr)))
         return (curr, curr)
 
 class ArrAccess(ComplexInstruction):
@@ -156,7 +153,6 @@ class ArrAccess(ComplexInstruction):
         self.code.append('iaload' + NL)
 
     def stackCount(self, curr) -> (int, int):
-        print(" ARR_ACCESS ('" + str(self) + "') -> " + str((curr + 1, curr + 2)))
         return (curr + 1, curr + 2)
 
 class Operator(ComplexInstruction):
@@ -168,11 +164,7 @@ class Operator(ComplexInstruction):
         self.code.append(operators[operator])
 
     def stackCount(self, curr) -> (int, int):
-        print(" OPERATOR ('" + str(self) + "') -> ", end='')
-        ret = Tree.Entry.countStackLimit(self.code)
-
-        print(ret)
-        return ret
+        return Tree.Entry.countStackLimit(self.code)
 
 
 class ConditionalBranch(ComplexInstruction):
@@ -204,15 +196,15 @@ class ConditionalBranch(ComplexInstruction):
         for right_op in right:
             self.template.append(right_op)
 
-        self.template.append(self.cmp_to_if[self.cmp_operators_neg[operator]] + labels[0])
+        self.template.append(self.cmp_to_if[self.cmp_operators_neg[operator]] + labels[0] + NL + NL)
 
         # Add True Code
         for code_line in true_code:
             self.template.append(code_line)
 
         # Add goto and label
-        self.template.append('goto ' + labels[1])
-        self.template.append(self._printLabel(labels[0]))
+        self.template.append('goto ' + labels[1] + NL)
+        self.template.append(NL + self._printLabel(labels[0]) + NL)
 
 
 
@@ -224,35 +216,32 @@ class IfBranching(ConditionalBranch):
     # labels = [start_label, end_label]
     def __init__(self, left, right, operator, code, labels):
         (self.true_code, self.false_code) = code
+        self.has_else = len(self.false_code) is not 0
         self.end_label = labels[1]
         super(IfBranching, self).__init__(left, right, operator, self.true_code, labels)
-
+        if not self.has_else:
+            del self.template[-2]
 
     def __str__(self) -> str:
         final_str = ''
         for code_line in self.template:
-            final_str += str(code_line) + NL
+            final_str += str(code_line)
 
         for code_line in self.false_code:
-            final_str += str(code_line) + NL
+            final_str += str(code_line)
 
-        final_str += self._printLabel(self.end_label) + NL
+        if self.has_else:
+            final_str += self._printLabel(self.end_label) + NL
 
         return final_str
 
     def stackCount(self, curr) -> (int, bool):
-        print("-IF TEMPLATE")
         (curr, max_curr)      = Tree.Entry.countStackLimit(self.template)
-        print("-IF TRUE")
         (true_curr, true_max) = Tree.Entry.countStackLimit(self.true_code)
-        print("-IF ELSE")
-        (else_curr, else_max) = Tree.Entry.countStackLimit(self.else_code)
+        (else_curr, else_max) = Tree.Entry.countStackLimit(self.false_code)
         true_curr += curr
         else_curr += curr
-        true_max += curr
-        else_max += curr
-        print("IF -> " + str((max(true_curr, else_curr), max(true_max, else_max))))
-        return (max(true_curr, else_curr), max(true_max, else_max))
+        return (max(true_curr, else_curr), max(true_max, else_max, max_curr))
 
 class WhileBranching(ConditionalBranch):
     # code = true_code
@@ -267,15 +256,11 @@ class WhileBranching(ConditionalBranch):
         final_str += self._printLabel(self.loop_label) + NL
 
         for code_line in self.template:
-            final_str += str(code_line) + NL
+            final_str += str(code_line)
 
         return final_str
 
     def stackCount(self, curr) -> (int, bool):
-        print("-WHILE TEMPLATE")
         (curr, max_curr)      = Tree.Entry.countStackLimit(self.template)
-        print("-WHILE CODE")
         (code_curr, code_max) = Tree.Entry.countStackLimit(self.code)
-
-        print("WHILE -> " + str((curr + code_curr, max_curr + code_max)))
         return (curr + code_curr, max_curr + code_max)

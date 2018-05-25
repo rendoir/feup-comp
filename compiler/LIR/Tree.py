@@ -16,23 +16,21 @@ ret_to_str = {
 
 def matchIOCall(func_name, args_list) -> list:
     io_functions = {
-    'read': [[], INT],
+    'read': [[[], INT]],
     'print': [[[STRING, INT], VOID], [[STRING], VOID], [[INT], VOID]],
     'println': [[[STRING, INT], VOID], [[STRING], VOID], [[INT], VOID], [[], VOID]]
     }
-
     func_infos = io_functions[func_name]
+    print("FUNC = " + func_name)
     for func_info in func_infos:
         args = func_info[0]
         arg_number = len(args_list)
         if arg_number is len(args):
             if arg_number is 0:
                 return func_info
-
-            for i in range(arg_number):
-                if isinstance(args_list[i], str) and args[i] == STRING:
-                    return func_info
-                elif isinstance(args_list[i], NumberVariable) and args[i] == INT:
+            else:
+                is_string = isinstance(args_list[0], str)
+                if args[0] == args_list[0] or args[0] == STRING and is_string:
                     return func_info
 
     return (None, None)
@@ -75,7 +73,6 @@ class Entry:
     def _processStmtList(self, stmts, var_stack) -> (int, list):
         lines = []
         for stmt in stmts:
-            print("STACK SIZE = " + str(len(var_stack)))
             stack_size = len(var_stack)
             if stack_size > self.max_locals:
                 self.max_locals = stack_size
@@ -107,7 +104,10 @@ class Entry:
         self.right = []
         if right_node.arr_size:
             arr_size = right_node.value[0]
-            self.right.append(Instruction.NewArr(arr_size.getVarName(), var_stack, arr_size.value.size))
+            size = arr_size.value
+            if arr_size.access:
+                size = arr_size.value.size
+            self.right.append(Instruction.NewArr(arr_size.getVarName(), var_stack, size))
 
         elif right_node.needs_op:
             (left_term, right_term) = (right_node.value[0], right_node.value[1])
@@ -169,7 +169,6 @@ class FunctionEntry(Entry):
         self.name = func_name
 
         self.stack = func_node.vars[0][:]
-        print("ARGS = " + str(self.stack))
         self.code_lines = self._processStmtList(func_node.code, self.stack)
         self.max_locals = self._getMaxLocals()
         self.max_stack = Entry.countStackLimit(self.code_lines)[1]
@@ -233,14 +232,13 @@ class CallEntry(Entry):
         for arg in call_node.args:
             if isinstance(arg, str):
                 self.args_load.append(Instruction.Load(arg))
-                type = 'Ljava/lang/String'
+                type = 'Ljava/lang/String;'
                 if arg.isdigit():
                     type = 'I'
                 self.args_type.append(type)
             else:
-                (type, var) = getVar(arg.name, call_node.parent)
                 self.args_load.append(Instruction.Load(arg.name, var_stack, True))
-                self.args_type.append(type)
+                self.args_type.append(arg.toLIR())
 
         self.calls = call_node.calls
 
@@ -251,9 +249,7 @@ class CallEntry(Entry):
             function = functions[self.calls[-1]]
             self.ret_type = ret_to_str[function.ret_str]
         elif len(self.calls) is 2 and self.calls[0] == 'io':
-            (args, self.ret_type) = matchIOCall(self.calls[1], self.args_type)
-        else:
-            raise AssertionError("Unkonwn module '" + self.calls[0] + "'")
+            (self.args_type, self.ret_type) = matchIOCall(self.calls[1], self.args_type)
 
     def __str__(self) -> str:
         final_str = ""
@@ -269,7 +265,6 @@ class CallEntry(Entry):
         for type in self.args_type:
             final_str += type
 
-        final_str = final_str[:-1]
         final_str += ')' + self.ret_type
 
         return final_str + NL
@@ -298,7 +293,7 @@ class AssignEntry(Entry):
             final_str += str(pre)
 
         for right_op in self.right:
-            final_str += str(right_op) + NL
+            final_str += str(right_op)
 
 
         final_str += str(self.left)
@@ -368,7 +363,7 @@ class IfEntry(ComparisonEntry):
         super(IfEntry, self).__init__(if_node, stack, labels)
 
         stack_copy = stack[:]
-        code = [self._processStmtList(if_node.code, stack), self._processStmtList(if_node.else_code, stack_copy)]
+        code = (self._processStmtList(if_node.code, stack), self._processStmtList(if_node.else_code, stack_copy))
         self.code = Instruction.IfBranching(self.left, self.right, if_node.test.op, code, labels)
 
     def stackCount(self, curr) -> (int, bool):

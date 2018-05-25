@@ -88,7 +88,10 @@ class Scope:
         return False
 
     def varHere(self, var_name) -> Variable:
-        return self.vars[var_name]
+        if var_name in self.vars:
+            return self.vars[var_name]
+        else:
+            return None
 
 # 20 maças, cortar laminadas ++ fino, marshmallows 1 por cada pessoa (+- 100), espeto para por marshmallows (dar para pelos menos 15),
 
@@ -178,7 +181,10 @@ class Function(Scope):
             if var.name == var_name:
                 return var
 
-        return self.vars[1][var_name]
+        if var_name in self.vars[1]:
+            return self.vars[1][var_name]
+        else:
+            return None
 
     def __str__(self) -> str:
         string = "("
