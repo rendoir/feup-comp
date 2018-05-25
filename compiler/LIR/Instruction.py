@@ -84,7 +84,6 @@ class Load(SimpleInstruction):
         return final_str
 
     def stackCount(self, curr) -> (int, int):
-        print(" LOAD ('" + str(self) + "') -> ", end='')
         if not self.negative:
             ret = (curr + 1, curr + 1)
         else:
@@ -114,14 +113,12 @@ class Store(SimpleInstruction):
         return final_str
 
     def stackCount(self, curr) -> (int, int):
-        print(" STORE ('" + str(self) + "') -> ", end='')
         if self.new_arr:
             ret = (curr - 1, curr)
         elif self.in_array:
             ret = (curr - 3, curr)
         else:
             ret = (curr - 1, curr)
-        print(str(ret))
         return ret
 
 class ComplexInstruction:
