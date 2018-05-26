@@ -37,3 +37,8 @@ Code generation:
 
 5 - Do we need to generate code to handle calls to external modules???
     correct/programa1
+
+6 - Println should be able to have any type of parameters:
+  In aval1 (same in aval2, aval3, ...)
+    Should be "invokestatic io/println(I)V"
+    Output is "invokestatic io/println(Ljava/lang/String;)V"
