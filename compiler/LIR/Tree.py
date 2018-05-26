@@ -2,7 +2,7 @@ from ..HIR import CodeScope, Stmt
 from ..HIR.Variable import NumberVariable, ArrayVariable
 from . import Instruction
 
-STRING = 'Ljava/lang/String'
+STRING = 'Ljava/lang/String;'
 INT = 'I'
 VOID = 'V'
 NL = '\n'
