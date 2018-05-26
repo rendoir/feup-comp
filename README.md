@@ -54,5 +54,4 @@ The parser code is in the .g4 file.
          a = 5; //Put the number 5 in all position of the array
  
  #### Additional Notes
- - Generation of code might not handle branching declaration, it still needs more testing
  - limit locals assumes that the first argument of main function is constantly used
