@@ -8,7 +8,7 @@ Semantic check:
 Code generation:
 1 - compiler crashes on certain files:
   correct/programa1
-  correct/sqrt
+  correct/simplex
   extra/call-main
   extra/error-uninitialized-output
 
@@ -42,3 +42,7 @@ Code generation:
   In aval1 (same in aval2, aval3, ...)
     Should be "invokestatic io/println(I)V"
     Output is "invokestatic io/println(Ljava/lang/String;)V"
+
+7 - No programa2 e 3 tem umas cenas um bocado maradas:
+  No programa 3:
+    Devia ser "astore 4" e foi gerado "istore 2"
