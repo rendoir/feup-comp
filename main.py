@@ -8,7 +8,7 @@ from pprint import pprint
 RED         = "\033[1;31m"
 RESET       = "\033[0;0m"
 
-EXTENSION = '.tmp'
+EXTENSION = '.yal'
 
 # ParserParser class will have a method for each 'rule' in the parser.
 # So since the parser has rules such as 'vector', 'expression' and 'pyClass'
