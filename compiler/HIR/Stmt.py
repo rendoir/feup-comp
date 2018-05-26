@@ -545,7 +545,6 @@ class Term(Statement):
             base = 1
 
         self.positive = (str(node.children[0]) is not "-")
-        print("TERM IS POSITIVE ? " + str(self.positive))
         child = node.children[base]
 
 

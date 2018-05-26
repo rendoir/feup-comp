@@ -1,8 +1,8 @@
 from ..HIR import Variable
 from . import Tree
-
 NL = '\n'
-
+module_name = None
+module_vars_used = 0
 operators = {
     '*':    ('imul ' + NL),
     '/':    ('idiv ' + NL),
@@ -37,13 +37,20 @@ def printStack(var_stack) -> str:
     return final_str
 
 class SimpleInstruction:
+    module_vars = None
+
     def __init__(self, var_name, var_stack):
+        global module_vars_used
         (self.const, self.var_access) = (None, None)
 
         if isinstance(var_name, str) and not Variable.Variable.isLiteral(var_name):
             (self.var, self.var_access) = getStackPosition(var_name, var_stack)
             if self.var_access is None:
-                raise AssertionError("SimpleInstruction: no var '" + var_name + "' in stack: " + printStack(var_stack))
+                if var_name in self.module_vars:
+                    self.var_access = self.module_vars[var_name]
+                    module_vars_used += 1
+                else:
+                    raise AssertionError("SimpleInstruction: no var '" + var_name + "' in stack: " + printStack(var_stack))
         else:
             self.const = var_name
 
@@ -58,16 +65,19 @@ class SimpleInstruction:
 class Load(SimpleInstruction):
     def __init__(self, var_name, var_stack=None, is_positive=True, size=False):
         super(Load, self).__init__(var_name, var_stack)
+        self.var_name = var_name
         self.negative = (not is_positive)
         self.size = size
 
     def __str__(self):
+        global module_name
         final_str = ''
         if self.negative:
             final_str += 'ldc 0' + NL
 
-
-        if self.const is not None :
+        if isinstance(self.var_access, Variable.Variable):
+            final_str += 'getstatic ' + module_name + '/' + self.var_access.name + ' ' + self.var_access.toLIR() + NL
+        elif self.const is not None :
             final_str += 'ldc ' + str(self.const) + NL
         else:
             if self.var.type == 'ARR':
@@ -88,6 +98,7 @@ class Load(SimpleInstruction):
             ret = (curr + 1, curr + 1)
         else:
             ret = (curr + 1, curr + 2)
+        print("LOAD '" + str(self)[:-1] + "' " + str((curr, curr)) + " -> " + str(ret))
         return ret
 
 class Store(SimpleInstruction):
@@ -102,12 +113,16 @@ class Store(SimpleInstruction):
         self.in_array = in_array
 
     def __str__(self):
-        if self.new_arr:
-            return 'astore ' + self.var_access + NL
-        elif self.in_array:
-            return 'iastore' + NL
+        global module_name
+        if isinstance(self.var_access, Variable.Variable):
+            return 'putstatic ' + module_name + '/' + self.var_access.name + ' ' + self.var_access.toLIR() + NL
         else:
-            return 'istore ' + self.var_access + NL
+            if self.new_arr:
+                return 'astore ' + self.var_access + NL
+            elif self.in_array:
+                return 'iastore' + NL
+            else:
+                return 'istore ' + self.var_access + NL
 
     def stackCount(self, curr) -> (int, int):
         if self.new_arr:
@@ -116,6 +131,7 @@ class Store(SimpleInstruction):
             ret = (curr - 3, curr)
         else:
             ret = (curr - 1, curr)
+        print("STORE '" + str(self)[:-1] + "' " + str((curr, curr)) + " -> " + str(ret))
         return ret
 
 class ComplexInstruction:
@@ -152,6 +168,7 @@ class ArrAccess(ComplexInstruction):
         self.code.append('iaload' + NL)
 
     def stackCount(self, curr) -> (int, int):
+        print("ARR_ACCESS '" + str(self)[:-1] + "' " + str((curr, curr)) + " -> " + str((curr+1, curr+2)))
         return (curr + 1, curr + 2)
 
 class Operator(ComplexInstruction):
@@ -163,7 +180,8 @@ class Operator(ComplexInstruction):
         self.code.append(operators[operator])
 
     def stackCount(self, curr) -> (int, int):
-        return Tree.Entry.countStackLimit(self.code)
+        ret = Tree.Entry.countStackLimit(self.code)
+        return (ret[0]-1, ret[1])
 
 
 class ConditionalBranch(ComplexInstruction):

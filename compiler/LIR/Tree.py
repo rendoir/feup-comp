@@ -2,7 +2,7 @@ from ..HIR import CodeScope, Stmt
 from ..HIR.Variable import NumberVariable, ArrayVariable
 from . import Instruction
 
-STRING = 'Ljava/lang/String'
+STRING = 'Ljava/lang/String;'
 INT = 'I'
 VOID = 'V'
 NL = '\n'
@@ -20,20 +20,16 @@ def matchIOCall(func_name, args_list) -> list:
     'print': [[[STRING, INT], VOID], [[STRING], VOID], [[INT], VOID]],
     'println': [[[STRING, INT], VOID], [[STRING], VOID], [[INT], VOID], [[], VOID]]
     }
-    print("ARGS = " + str(args_list));
 
     func_infos = io_functions[func_name]
     arg_number = len(args_list)
-
     for func_info in func_infos:
         args = func_info[0]
-        print("FUNC ARGS = " + str(args))
         if arg_number is len(args):
             if arg_number is 0:
                 return func_info
             else:
-                is_string = args_list[0] == 'Ljava/lang/String'
-                if args[0] == args_list[0] or args[0] == STRING and is_string:
+                if args[0] == args_list[0]:
                     return func_info
 
     return (None, None)
@@ -56,16 +52,44 @@ class LowLevelTree:
     def __init__(self, high_tree):
         self.functions = {}
         self.mod_name = high_tree.name
+        self.mod_vars = high_tree.vars
+        Instruction.SimpleInstruction.module_vars = self.mod_vars
+        Instruction.module_name = self.mod_name
         for (func_name, func_info) in high_tree.code.items():
             self.functions[func_name] = FunctionEntry(func_info, func_name)
 
     def __str__(self) -> str:
         final_str = '.class public ' + self.mod_name + NL
         final_str += '.super java/lang/Object' + NL + NL
+        final_str += self.__printVariables()
         for (func_name, func_info) in self.functions.items():
             final_str += str(func_info)
             final_str += NL + NL
 
+        final_str += self.__printClinit();
+
+        return final_str
+
+    def __printVariables(self) -> str:
+        final_str = ''
+
+        for (var_name, var_info) in self.mod_vars.items():
+            final_str += '.field static ' + var_name + ' ' + var_info.toLIR() + NL
+
+        return final_str + NL
+
+    def __printClinit(self) -> str:
+        final_str = '.method static public <clinit>()V' + NL
+        final_str += '.limit stack ' + str(1 if len(self.mod_vars) > 0 else 0) + NL
+        final_str += '.limit locals ' + str(1 if len(self.mod_vars) > 0 else 0) + NL
+
+        for (var_name, var_info) in self.mod_vars.items():
+            if isinstance(var_info, ArrayVariable):
+                final_str += 'ldc ' + str(var_info.size) + NL
+                final_str += 'newarray int' + NL
+                final_str += 'putstatic ' + self.mod_name + '/' + var_name + var_info.toLIR() + NL + NL
+
+        final_str += 'return' + NL
         return final_str
 
 class Entry:
@@ -76,7 +100,7 @@ class Entry:
     def _processStmtList(self, stmts, var_stack) -> (int, list):
         lines = []
         for stmt in stmts:
-            stack_size = len(var_stack)
+            stack_size = (len(var_stack) + Instruction.module_vars_used)
             if stack_size > self.max_locals:
                 self.max_locals = stack_size
 
@@ -89,7 +113,7 @@ class Entry:
             else: # Call
                 lines.append(CallEntry(stmt, var_stack))
 
-        stack_size = len(var_stack)
+        stack_size = (len(var_stack) + Instruction.module_vars_used)
         if stack_size > self.max_locals:
             self.max_locals = stack_size
 
@@ -172,6 +196,7 @@ class FunctionEntry(Entry):
         self.name = func_name
 
         self.stack = func_node.vars[0][:]
+        Instruction.module_vars_used = 0
         self.code_lines = self._processStmtList(func_node.code, self.stack)
         self.max_locals = self._getMaxLocals()
         self.max_stack = Entry.countStackLimit(self.code_lines)[1]
@@ -232,10 +257,11 @@ class CallEntry(Entry):
     def __init__(self, call_node, var_stack):
         self.args_load = []
         self.args_type = []
+        self.ret_type = 'V'
         for arg in call_node.args:
             if isinstance(arg, str):
                 self.args_load.append(Instruction.Load(arg))
-                type = 'Ljava/lang/String;'
+                type = STRING
                 if arg.isdigit():
                     type = 'I'
                 self.args_type.append(type)
@@ -253,6 +279,7 @@ class CallEntry(Entry):
             self.ret_type = ret_to_str[function.ret_str]
         elif len(self.calls) is 2 and self.calls[0] == 'io':
             (self.args_type, self.ret_type) = matchIOCall(self.calls[1], self.args_type)
+
 
     def __str__(self) -> str:
         final_str = ""
