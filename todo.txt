@@ -1,5 +1,5 @@
 Code generation:
-1 - Fkin yal rules that do not make sense...
+1 - Freaking yal rules that do not make sense...
     Need to add the rule for the case:
       a = [2];
       a = 1;  //All positions of array initialized to 1
