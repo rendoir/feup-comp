@@ -1,3 +1,5 @@
 module errorUninitializedOutput {
-	function y = f() {} // Error: y was not initialized before being used.
+	function y = f() {
+    a = 10;
+  } // Error: y was not initialized before being used.
 }

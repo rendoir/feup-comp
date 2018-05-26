@@ -1,43 +1,13 @@
-General:
-1 - Remove prints.
-
-Semantic check:
-  Case when function does not initialize return variable!
-
-
 Code generation:
-1 - compiler crashes on certain files:
-  correct/programa1
-  correct/simplex
-  extra/call-main
-  extra/error-uninitialized-output
-
-2 - Given generated files have some weird peculiarities
-  test/correct/aval3.yal
-    main() allocates 'a' to local 3, and 'b' to 1 ???
-
-  test/correct/aval4.yal
-    No code generated???
-
-3 - Module variable use getstatic and putstatic
-    correct/programa1
-
-4 - Add code for 'clinit'
-    correct/programa1
-
-5 - Fkin yal rules that do not make sense...
+1 - Fkin yal rules that do not make sense...
     Need to add the rule for the case:
       a = [2];
       a = 1;  //All positions of array initialized to 1
 
-5 - Do we need to generate code to handle calls to external modules???
-    correct/programa1
 
-6 - Println should be able to have any type of parameters:
-  In aval1 (same in aval2, aval3, ...)
-    Should be "invokestatic io/println(I)V"
-    Output is "invokestatic io/println(Ljava/lang/String;)V"
+Code Generation Peculiarities:
+  1 - test/correct/aval3.yal
+    main() allocates 'a' to 3 and 'b' to 1 ???
 
-7 - No programa2 e 3 tem umas cenas um bocado maradas:
-  No programa 3:
-    Devia ser "astore 4" e foi gerado "istore 2"
+  2 - test/correct/programa3.yal
+    66:0 - 'astore 4' shouldn't it be 'astore 2' ???

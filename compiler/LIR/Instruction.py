@@ -98,7 +98,6 @@ class Load(SimpleInstruction):
             ret = (curr + 1, curr + 1)
         else:
             ret = (curr + 1, curr + 2)
-        print("LOAD '" + str(self)[:-1] + "' " + str((curr, curr)) + " -> " + str(ret))
         return ret
 
 class Store(SimpleInstruction):
@@ -131,7 +130,6 @@ class Store(SimpleInstruction):
             ret = (curr - 3, curr)
         else:
             ret = (curr - 1, curr)
-        print("STORE '" + str(self)[:-1] + "' " + str((curr, curr)) + " -> " + str(ret))
         return ret
 
 class ComplexInstruction:
@@ -168,7 +166,6 @@ class ArrAccess(ComplexInstruction):
         self.code.append('iaload' + NL)
 
     def stackCount(self, curr) -> (int, int):
-        print("ARR_ACCESS '" + str(self)[:-1] + "' " + str((curr, curr)) + " -> " + str((curr+1, curr+2)))
         return (curr + 1, curr + 2)
 
 class Operator(ComplexInstruction):

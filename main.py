@@ -5,6 +5,8 @@ from antlr_yal import *
 from compiler import *
 
 from pprint import pprint
+RED         = "\033[1;31m"
+RESET       = "\033[0;0m"
 
 EXTENSION = '.tmp'
 
@@ -37,8 +39,9 @@ def main(argv):
     sem_errors = printer.printMessages()
     if not sem_errors:
         llir_tree = LowLevelTree(module)
-        writeToFile(extractFileName(argv[1]) + EXTENSION, str(llir_tree))
-        print("Done!")
+        file_name = extractFileName(argv[1]) + EXTENSION
+        writeToFile(file_name, str(llir_tree))
+        print(GREEN + "\n ---> SUCCESS <---" + RESET + "\nOutput written to '" + file_name + "'")
 
     sys.exit(1 if sem_errors else 0)
 

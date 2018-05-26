@@ -159,10 +159,11 @@ class Entry:
         return self.max_locals
 
     def _updateStack(self, var_stack, node):
-        latest_var = var_stack[-1]
-        if isinstance(latest_var, str):
-            (type, var) = getVar(latest_var, node)
-            var_stack[-1] = var
+        if (len(var_stack) > 1):
+            latest_var = var_stack[-1]
+            if isinstance(latest_var, str):
+                (type, var) = getVar(latest_var, node)
+                var_stack[-1] = var
 
     def countStackLimit(code_lines) -> (int, int):
         max_limit = 0
@@ -313,7 +314,7 @@ class AssignEntry(Entry):
             self.pre_code.append(Instruction.Load(store_name, var_stack, True))
             self.pre_code.append(Instruction.Load(assign_node.left.access.index, var_stack, True))
 
-        self.left = Instruction.Store(store_name, var_stack, in_array, assign_node.right.arr_size)
+        self.left = Instruction.Store(store_name, var_stack, in_array, assign_node.right.isArray())
         self._updateStack(var_stack, assign_node.parent)
         self._processRight(assign_node.right, var_stack)
 

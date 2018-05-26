@@ -13,6 +13,7 @@ UNDERLINE   = '\033[4m'
 
 UNDEFINED_VAR = "Undefined variable"
 NOT_INITIALIZED = "Variable not initialized"
+RET_NOT_INITIALIZED = "Return variable not initialized"
 UNDEFINED_FUNC = "Undefined function"
 UNKNOWN_COMP = "Unknown comparison"
 UNKNOWN_OP = "Unknown operation"
@@ -124,7 +125,8 @@ class ErrorPrinter:
     # Returns true if there was a semantic error
     def printMessages(self) -> bool:
         error = True
-        print("--- BEGIN SEMANTIC ANALYZIS ---")
+        if len(self.errors) > 0 or len(self.warnings) > 0:
+            print("--- BEGIN SEMANTIC ANALYZIS ---")
 
         for error in self.errors:
             print(error)
@@ -148,10 +150,12 @@ class ErrorPrinter:
         else:
             final_msg += " 0 WARNINGS --- " + RESET
 
-        print("\n" + final_msg)
+        if len(self.errors) > 0 or len(self.warnings) > 0:
+            print("\n" + final_msg)
 
         self.errors[:] = []
         return error
+
     # ----- ERROR MESSAGES -------
 
     def undefVar(self, line, cols, var_name):
@@ -161,6 +165,10 @@ class ErrorPrinter:
     def notInitialized(self, line, cols, var_name):
         new_cols = (cols[0], cols[1] + len(var_name) - 1)
         self.__addError(line, new_cols, NOT_INITIALIZED, "Variable '" + var_name + "' used before initialization")
+
+    def retNotInitialized(self, line, cols, var_name, func_name):
+        new_cols = (cols[0], len(self.lines[line+1]))
+        self.__addError(line, new_cols, RET_NOT_INITIALIZED, "Return variable '" + var_name + "' of function '" + func_name + "' not inititialized at function end");
 
     def undefFunc(self, line, cols, func_name):
         self.__addError(line, cols, UNDEFINED_FUNC, "Could not find '" + func_name + "' in current module!" + ErrorPrinter.__suggestion("Maybe it belongs to another module"))

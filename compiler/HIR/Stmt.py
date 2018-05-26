@@ -313,6 +313,12 @@ class RightOP(Statement):
         else:
             return -1
 
+    def isArray(self) -> bool:
+        if self.arr_size:
+            return True
+        elif not self.needs_op:
+            return self.value[0].isArray(None)
+
 
     def __str__(self) -> str:
         if self.needs_op:
@@ -536,7 +542,7 @@ class Term(Statement):
         if __debug__:
             assert isinstance(node, yalParser.TermContext), "Term.__init__() 'node'\n - Expected 'yalParser.TermContext'\n - Got: " + str(type(node))
             assert isinstance(parent, Scope), "Term.__init__() 'parent'\n - Expected 'Scope'\n - Got: " + str(type(parent))
-
+        self.is_array = None
         base = 0
         if isinstance(node, tree.Tree.TerminalNodeImpl):
             return;
@@ -585,12 +591,20 @@ class Term(Statement):
         return False
 
     def isArray(self, var_list) -> bool:
-        if isinstance(self.value, ScalarAccess) and not self.value.size:
-            var = getVar(self.value.var, var_list)
-            if var is not None:
-                return isinstance(var, ArrayVariable)
-            else: # Due to error propagation
-                return False
+        if self.is_array is None:
+            if isinstance(self.value, ScalarAccess) and not self.value.size:
+                var = getVar(self.value.var, var_list)
+                if var is not None:
+                    self.is_array = isinstance(var, ArrayVariable)
+                    return self.is_array
+                else: # Due to error propagation
+                    return False
+            elif isinstance(self.value, Call):
+                self.is_array = (self.value.returnType() == 'ARR')
+                return self.is_array
+        else:
+            return self.is_array
+
 
     def checkSemantics(self, printer, var_list):
         if __debug__:

@@ -96,7 +96,7 @@ class Scope:
 # 20 maças, cortar laminadas ++ fino, marshmallows 1 por cada pessoa (+- 100), espeto para por marshmallows (dar para pelos menos 15),
 
 class Function(Scope):
-    def __init__(self, ret_var, args , stmts , parent):
+    def __init__(self, ret_var, args, stmts, func_name, line, cols, parent):
         super(Function, self).__init__(parent)
         if __debug__:
             assert isinstance(ret_var, ParserRuleContext) or ret_var is None, "Function.__init__() 'ret_var'\n - Expected: 'ParserRuleContext'\n - Got: " + str(type(ret_var))
@@ -104,6 +104,9 @@ class Function(Scope):
             assert isinstance(stmts, yalParser.Stmt_listContext), "Function.__init__() 'stmts'\n - Expected: 'yalParser.Stmt_listContext'\n - Got: " + str(type(stmts))
             assert isinstance(parent, Scope), "Function.__init__() 'parent'\n - Expected: 'Scope'\n - Got: " + str(type(parent))
 
+        self.name = func_name
+        self.line = line
+        self.cols = cols
         #[<arguments>, <local_variables>]
         self.vars = [[], dict()]
 
@@ -205,6 +208,10 @@ class Function(Scope):
         for code_chunk in self.code:
             var_list = [self.vars[1], self.vars[0], self.parent.vars]
             code_chunk.checkSemantics(printer, var_list)
+
+        print("VAR = " + str(self.vars[1][self.ret_var]))
+        if not self.vars[1][self.ret_var].initialized():
+            printer.retNotInitialized(self.line, self.cols, self.ret_var, self.name)
 
 class If(Scope):
     def __init__(self, node, parent):
@@ -485,7 +492,7 @@ class Module(Scope):
 
         if not isinstance(node.children[-2], tree.Tree.TerminalNodeImpl): # Check if function has arguments
             vars = node.children[-2]
-        function = Function(ret_var, vars, stmts, self)
+        function = Function(ret_var, vars, stmts, func_name, node.getLine(), node.getColRange(), self)
         if func_name == 'main':
             function.vars[0].append(ArrayVariable('args', -1, None, None))
 
