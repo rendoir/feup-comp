@@ -48,6 +48,10 @@ The parser code is in the .g4 file.
  - :white_check_mark: Code for conditional instructions
  - :white_check_mark: Code for loops
  - :white_check_mark: Code to deal with arrays
+   - :x: Code to handle the following situation:
+   
+         a = [10];
+         a = 5; //Put the number 5 in all position of the array
  
  #### Additional Notes
  - Generation of code might not handle branching declaration, it still needs more testing
