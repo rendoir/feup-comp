@@ -79,7 +79,6 @@ class Load(SimpleInstruction):
                 final_str = 'iload ' + self.var_access + NL
 
         if self.negative:
-            final_str = final_str[:-1]
             final_str += 'isub' + NL
 
         return final_str

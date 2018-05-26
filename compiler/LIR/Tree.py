@@ -20,16 +20,19 @@ def matchIOCall(func_name, args_list) -> list:
     'print': [[[STRING, INT], VOID], [[STRING], VOID], [[INT], VOID]],
     'println': [[[STRING, INT], VOID], [[STRING], VOID], [[INT], VOID], [[], VOID]]
     }
+    print("ARGS = " + str(args_list));
+
     func_infos = io_functions[func_name]
-    print("FUNC = " + func_name)
+    arg_number = len(args_list)
+
     for func_info in func_infos:
         args = func_info[0]
-        arg_number = len(args_list)
+        print("FUNC ARGS = " + str(args))
         if arg_number is len(args):
             if arg_number is 0:
                 return func_info
             else:
-                is_string = isinstance(args_list[0], str)
+                is_string = args_list[0] == 'Ljava/lang/String'
                 if args[0] == args_list[0] or args[0] == STRING and is_string:
                     return func_info
 
@@ -126,7 +129,7 @@ class Entry:
         elif isinstance(value, Stmt.ScalarAccess):
             return Instruction.Load(value.var, var_stack, positive, value.size)
         else:
-            return Instruction.Load(str(value))
+            return Instruction.Load(str(value), None, positive)
 
     def _getMaxLocals(self) -> int:
         return self.max_locals

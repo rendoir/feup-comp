@@ -19,11 +19,6 @@ Code generation:
   test/correct/aval4.yal
     No code generated???
 
-2 - negative constants being treated as positive:
-  In file test/constant-ranges
-    Should be "sipush -129"
-    Output is "ldc 129"
-
 3 - Module variable use getstatic and putstatic
     correct/programa1
 
