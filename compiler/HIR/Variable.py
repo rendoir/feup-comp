@@ -34,10 +34,10 @@ class Variable:
 
         if var[0] == '"' and var[-1] == '"':
             return True;
-        if var[0].isdigit():
+        if var.isdigit() or (var[0] == '-' and var[1:].isdigit()):
             return True;
 
-
+        print('Var "' + var + '" not a digit')
         return False
 
     def toLIR() -> str:

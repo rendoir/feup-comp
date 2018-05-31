@@ -179,7 +179,6 @@ class Call(Statement):
         else:
             return "???"
 
-
 class ExprTest(Statement):
     def __init__(self, node, parent):
         super(ExprTest, self).__init__(node, parent)
@@ -208,7 +207,6 @@ class ExprTest(Statement):
                 printer.unknownComp(self.line, self.cols, self.left.access.var, str(self.op), self.right.value[0].value.var)
             elif (not is_arr and right_type == 'ARR') or (is_arr and right_type == 'NUM'):
                 printer.opDiffTypes(self.line, self.cols, ('ARR' if is_arr else 'NUM'), self.op, right_type)
-
 
 class LeftOP(Statement):
     def __init__(self, node, parent):
@@ -561,7 +559,7 @@ class Term(Statement):
         elif isinstance(child, yalParser.Scalar_accessContext):
             self.value = ScalarAccess(child, parent)
         elif isinstance(child, tree.Tree.TerminalNodeImpl):
-            self.value = int(str(child))
+            self.value = int(str(child)) * (1 if self.positive else -1)
         else:
             print("HMMMMMMMMMMMMM?!!?!")
 

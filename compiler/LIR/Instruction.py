@@ -19,9 +19,9 @@ operators = {
 def getStackPosition(var_name, var_stack)  -> (Variable, int):
     for i in range(len(var_stack)):
         if isinstance(var_stack[i], str):
-            ret = var_name == var_stack[i]
+            ret = (var_name == var_stack[i])
         else:
-            ret = var_name == var_stack[i].name
+            ret = (var_name == var_stack[i].name)
 
         if ret:
             return (var_stack[i], str(i))
@@ -72,33 +72,48 @@ class Load(SimpleInstruction):
     def __str__(self):
         global module_name
         final_str = ''
-        if self.negative:
+        if self.negative and self.const is None:
             final_str += 'ldc 0' + NL
 
         if isinstance(self.var_access, Variable.Variable):
             final_str += 'getstatic ' + module_name + '/' + self.var_access.name + ' ' + self.var_access.toLIR() + NL
         elif self.const is not None :
-            final_str += 'ldc ' + str(self.const) + NL
+            final_str += self.constSelector(int(self.const)) + NL
         else:
             if self.var.type == 'ARR':
-                final_str = 'aload ' + self.var_access + NL
+                final_str += self.loadSelector('aload', int(self.var_access)) + NL
 
                 if self.size:
                     final_str += 'arraylength' + NL
             else:
-                final_str = 'iload ' + self.var_access + NL
+                final_str += self.loadSelector('iload', int(self.var_access)) + NL
 
-        if self.negative:
+        if self.negative and self.const is None:
             final_str += 'isub' + NL
 
         return final_str
 
     def stackCount(self, curr) -> (int, int):
-        if not self.negative:
-            ret = (curr + 1, curr + 1)
+        return (curr + 1, curr + 1)
+
+    def constSelector(self, const_n) -> str:
+        print('Selecting for n = ' + str(const_n))
+        if const_n is -1:
+            return 'iconst_m1'
+        if 0 <= const_n <= 5:
+            return 'iconst_' + str(const_n)
+        elif -128 <= const_n <= 127:
+            return 'bipush ' + str(const_n)
+        elif -32768 <= const_n <= 32767:
+            return 'sipush ' + str(const_n)
         else:
-            ret = (curr + 1, curr + 2)
-        return ret
+            return 'ldc ' + str(const_n)
+
+    def loadSelector(self, load_type, access_n):
+        if 0 <= access_n <= 3:
+            return load_type + '_' + str(access_n)
+        else:
+            return load_type + ' ' + str(access_n)
 
 class Store(SimpleInstruction):
     def __init__(self, var_name, var_stack, in_array=False, new_arr=False):
@@ -117,11 +132,11 @@ class Store(SimpleInstruction):
             return 'putstatic ' + module_name + '/' + self.var_access.name + ' ' + self.var_access.toLIR() + NL
         else:
             if self.new_arr:
-                return 'astore ' + self.var_access + NL
+                return self.storeSelector('astore', int(self.var_access)) + NL
             elif self.in_array:
                 return 'iastore' + NL
             else:
-                return 'istore ' + self.var_access + NL
+                return self.storeSelector('istore', int(self.var_access)) + NL
 
     def stackCount(self, curr) -> (int, int):
         if self.new_arr:
@@ -131,6 +146,12 @@ class Store(SimpleInstruction):
         else:
             ret = (curr - 1, curr)
         return ret
+
+    def storeSelector(self, store_type, access_n):
+        if 0 <= access_n <= 3:
+            return store_type + '_' + str(access_n)
+        else:
+            return store_type + ' ' + str(access_n)
 
 class ComplexInstruction:
     def __init__(self):
@@ -179,6 +200,26 @@ class Operator(ComplexInstruction):
     def stackCount(self, curr) -> (int, int):
         ret = Tree.Entry.countStackLimit(self.code)
         return (ret[0]-1, ret[1])
+
+    def __str__(self) -> str:
+        left = self.code[0]
+        right = self.code[1]
+        if isinstance(left, Load) and isinstance(right, Load) and left.const is not None and right.const is not None: #I can save this instruction
+            del self.code[:]
+            result = int(left.const) + int(right.const)
+            self.code.append(Load(result))
+        elif isinstance(left, Load) and left.const is not None: # Can use iinc
+            left_value = int(left.const)
+            if -128 <= left_value <= 127:
+                del self.code[:]
+                self.code.append('iinc ' + left.var_access + ' ' + left_value)
+        elif isinstance(right, Load) and right.const is not None:
+            right_value = int(right.const)
+            if -128 <= right_value <= 127:
+                del self.code[:]
+                self.code.append('iinc ' + right.var_access + ' ' + right_value)
+
+        return super(ComplexInstruction, self).__str__()
 
 
 class ConditionalBranch(ComplexInstruction):

@@ -159,9 +159,9 @@ class Entry:
         return self.max_locals
 
     def _updateStack(self, var_stack, node):
-        if (len(var_stack) > 1):
+        if (len(var_stack) >= 1):
             latest_var = var_stack[-1]
-            if isinstance(latest_var, str):
+            if isinstance(latest_var, str) and latest_var != 'args':
                 (type, var) = getVar(latest_var, node)
                 var_stack[-1] = var
 

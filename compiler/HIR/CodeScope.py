@@ -209,8 +209,7 @@ class Function(Scope):
             var_list = [self.vars[1], self.vars[0], self.parent.vars]
             code_chunk.checkSemantics(printer, var_list)
 
-        print("VAR = " + str(self.vars[1][self.ret_var]))
-        if not self.vars[1][self.ret_var].initialized():
+        if self.ret_var is not None and not self.vars[1][self.ret_var].initialized():
             printer.retNotInitialized(self.line, self.cols, self.ret_var, self.name)
 
 class If(Scope):
