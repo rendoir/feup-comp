@@ -35,7 +35,7 @@ def getStackPosition(var_name, var_stack)  -> (Variable, int):
         if isinstance(var_stack[i], str):
             ret = (var_name == var_stack[i])
         else:
-            if var_stack[i].altered == 0 and var_stack[i].value is not None:
+            if var_stack[i].unused():
                 unused_vars += 1
             ret = (var_name == var_stack[i].name)
 
@@ -89,6 +89,10 @@ class Load(SimpleInstruction):
         self.size = size
         if isinstance(self.var, Variable.NumberVariable) and self.var.altered is 0 and self.var.value is not None:
             self.const = self.var.value
+            self.var = None
+            self.var_access = None
+        elif isinstance(self.var_access, Variable.NumberVariable) and self.var_access.altered is 0 and self.var_access is not None:
+            self.const = self.var_access.value
             self.var = None
             self.var_access = None
 

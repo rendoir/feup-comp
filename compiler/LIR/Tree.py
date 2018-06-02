@@ -74,7 +74,9 @@ class LowLevelTree:
         final_str = ''
 
         for (var_name, var_info) in self.mod_vars.items():
-            final_str += '.field static ' + var_name + ' ' + var_info.toLIR() + NL
+            print("STATIC VAR = " + str(var_info))
+            if not var_info.unused():
+                final_str += '.field static ' + var_name + ' ' + var_info.toLIR() + NL
 
         return final_str + NL
 
@@ -346,10 +348,10 @@ class AssignEntry(Entry):
 
     def isVarNeeded(self, node, var, var_name) -> bool:
         if var is not None:
-            return var.altered == 0 and var.value is not None
+            return var.unused()
         else:
             (type, var) = getVar(var_name, node.parent)
-            return var.altered == 0 and var.value is not None
+            return var.unused()
 
     def stackCount(self, curr) -> (int, bool):
         max_limit = curr

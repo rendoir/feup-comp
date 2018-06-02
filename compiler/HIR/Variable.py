@@ -41,6 +41,9 @@ class Variable:
     def toLIR() -> str:
         raise NotImplementedError("Should have implemented Variable::toLIR()")
 
+    def unused(self) -> bool:
+        return isinstance(self, NumberVariable) and self.altered == 0 and self.value is not None
+
 class NumberVariable (Variable):
     def __init__(self, name: str, value: int, decl: int, init: int):
         super(NumberVariable, self).__init__(name, "NUM", decl, init)
