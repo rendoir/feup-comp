@@ -326,6 +326,8 @@ class AssignEntry(Entry):
         updated_var = self._updateStack(var_stack, assign_node.parent)
         self.not_needed = self.isVarNeeded(assign_node, updated_var, store_name)
         self._processRight(assign_node.right, var_stack)
+        if isinstance(self.right[0], Instruction.Operator) and self.right[0].tryUsingIInc(self.left.var_access):
+            self.left = ''
 
     def __str__(self) -> str:
         if not self.not_needed:
@@ -344,14 +346,15 @@ class AssignEntry(Entry):
 
     def isVarNeeded(self, node, var, var_name) -> bool:
         if var is not None:
-            return var.altered == 0
+            return var.altered == 0 and var.value is not None
         else:
             (type, var) = getVar(var_name, node.parent)
-            return var.altered == 0
+            return var.altered == 0 and var.value is not None
 
     def stackCount(self, curr) -> (int, bool):
         max_limit = curr
         for code in (self.pre_code + self.right + [self.left]):
+            if not isinstance(code, str):
                 (new_curr, new_max) = code.stackCount(curr)
                 if new_curr >= 0:
                     curr = new_curr

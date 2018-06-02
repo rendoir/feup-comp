@@ -438,6 +438,8 @@ class ArrayAccess(Statement):
             elif self.index.isdigit() and not var.validAccess(int(self.index)):
                 printer.outOfBounds(self.line, self.cols, var.name, var.size, self.index)
 
+            if not report_existance:
+                var.altered += 1
         elif report_existance:
             if Scope.isBranchVar(self.parent, self.var):
                 printer.branchingDecl(self.line, self.cols, self.var)

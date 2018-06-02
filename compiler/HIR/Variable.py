@@ -1,6 +1,7 @@
 
 class Variable:
     def __init__(self, name: str, type: str, decl: int, init: int):
+        self.value = None
         self.name = name
         self.type = type
         self.line_init = init

@@ -30,16 +30,19 @@ apply_operator  ={
 }
 
 def getStackPosition(var_name, var_stack)  -> (Variable, int):
+    unused_vars = 0
     for i in range(len(var_stack)):
         if isinstance(var_stack[i], str):
             ret = (var_name == var_stack[i])
         else:
+            if var_stack[i].altered == 0 and var_stack[i].value is not None:
+                unused_vars += 1
             ret = (var_name == var_stack[i].name)
 
         if ret:
-            return (var_stack[i], str(i))
+            return (var_stack[i], str(i - unused_vars))
 
-    return (None, None)
+    return (None, unused_vars)
 
 def printStack(var_stack) -> str:
     final_str = ("\nSTACK = [\n")
@@ -59,13 +62,13 @@ class SimpleInstruction:
         if isinstance(var_name, str) and not Variable.Variable.isLiteral(var_name):
             (self.var, self.var_access) = getStackPosition(var_name, var_stack)
 
-            if self.var_access is None:
+            if self.var is None:
                 if var_name in self.module_vars:
-                    self.var = self.module_vars[var_name]
-                    if self.var.altered > 0:
+                    self.var_access = self.module_vars[var_name]
+                    if self.var_access.altered > 0:
                         module_vars_used += 1
                 else:
-                    raise AssertionError("SimpleInstruction: no var '" + var_name + "' in stack: " + printStack(var_stack))
+                    raise AssertionError("SimpleInstruction: no var '" + var_name + "' in stack: " + printStack(var_stack), self.var_access)
 
         else:
             self.const = var_name
@@ -95,8 +98,8 @@ class Load(SimpleInstruction):
         if self.negative and self.const is None:
             final_str += 'iconst_0' + NL
 
-        if isinstance(self.var, Variable.Variable):
-            final_str += 'getstatic ' + module_name + '/' + self.var.name + ' ' + self.var.toLIR() + NL
+        if isinstance(self.var_access, Variable.Variable):
+            final_str += 'getstatic ' + module_name + '/' + self.var_access.name + ' ' + self.var_access.toLIR() + NL
         elif self.const is not None:
             if isinstance(self.const, int) or self.const[0] != '"':
                 final_str += self.constSelector(int(self.const)) + NL
@@ -141,8 +144,8 @@ class Store(SimpleInstruction):
     def __init__(self, var_name, var_stack, in_array=False, new_arr=False):
         try:
             super(Store, self).__init__(var_name, var_stack)
-        except AssertionError:
-            self.var_access = str(len(var_stack))
+        except AssertionError as err:
+            self.var_access = str(len(var_stack) - err.args[1])
             var_stack.append(var_name)
 
         self.new_arr = new_arr
@@ -150,8 +153,8 @@ class Store(SimpleInstruction):
 
     def __str__(self):
         global module_name
-        if isinstance(self.var, Variable.Variable):
-            return 'putstatic ' + module_name + '/' + self.var.name + ' ' + self.var.toLIR() + NL
+        if isinstance(self.var_access, Variable.Variable):
+            return 'putstatic ' + module_name + '/' + self.var_access.name + ' ' + self.var_access.toLIR() + NL
         else:
             if self.new_arr:
                 return self.storeSelector('astore', int(self.var_access)) + NL
@@ -215,6 +218,7 @@ class ArrAccess(ComplexInstruction):
 class Operator(ComplexInstruction):
     def __init__(self, left, right, operator):
         super(Operator, self).__init__()
+        self.iinc = False
         self.operator = operator
         self.code.append(left)
         self.code.append(right)
@@ -222,10 +226,13 @@ class Operator(ComplexInstruction):
 
     def stackCount(self, curr) -> (int, int):
         ret = Tree.Entry.countStackLimit(self.code)
-        return (ret[0]-1, ret[1])
+        if not self.iinc:
+            return (ret[0]-1, ret[1])
+        else:
+            return (ret[0], ret[1] + 2)
 
     def __str__(self) -> str:
-        if self.operationUnfold(self.code[0], self.code[1]):
+        if len(self.code) > 1 and self.operationUnfold(self.code[0], self.code[1]):
             return str(self.code[0])
         else:
             return super(Operator, self).__str__()
@@ -243,22 +250,40 @@ class Operator(ComplexInstruction):
 
         return False
 
+    def __isDigit(self, string) -> bool:
+        if isinstance(string, str):
+            if len(string) > 0:
+                if string.isdigit():
+                    return True
+                if string[0] == '-' and string[1:].isdigit():
+                    return True
 
-    def canUnfoldConstant(self) -> bool:
+        return False
+
+    def tryUsingIInc(self, access) -> bool:
         left = self.code[0]
         right = self.code[1]
-        return (isinstance(left, Load) and left.const is not None) or (isinstance(right, Load) and right.const is not None)
+        left_can = isinstance(left, Load) and self.__isDigit(left.const) and -128 <= int(left.const) <= 127
+        right_can = isinstance(right, Load) and self.__isDigit(right.const) and -128 <= int(right.const) <= 127
+        op_can = self.operator == '+' or self.operator == '-'
+        # Check if only either right of left are a constant
+        # If both are a constant the they will be unfolded later on
+        if op_can and (right_can is not left_can):
+            if right_can:
+                value = int(right.const)
+            else:
+                value = int(left.const)
 
-    # def constantUnfold(self, constant_inst, store_pos) -> bool:
-    #     if isinstance(constant_inst, Load) and constant_inst.const is not None:
-    #         value = int(constant_inst.const)
-    #         if -128 <= value <= 127:
-    #             del self.code[:]
-    #             self.code.append('iinc ' + str(store_pos) + ' ' + str(constant_inst.const))
-    #             return True
-    #
-    #     return False
+            if self.operator == '-':
+                value *= -1
 
+            if -128 <= value <= 127:
+                self.iinc = True
+                del self.code[:]
+                self.code.append('iinc ' + str(access) + ' ' + str(value) + NL)
+                return True
+
+        return False
 
 class ConditionalBranch(ComplexInstruction):
     cmp_operators_neg = {
