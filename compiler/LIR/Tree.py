@@ -206,7 +206,8 @@ class FunctionEntry(Entry):
         final_str = ''
         final_str += self.__functionHeader() + NL
         for line in self.code_lines:
-            final_str += str(line) + NL
+            line_str = str(line)
+            final_str += line_str + NL
 
         final_str += self.__returnString()
         return final_str
@@ -217,6 +218,8 @@ class FunctionEntry(Entry):
             max_n = line._getMaxLocals()
             if max_n > max:
                 max = max_n
+            elif max_n is -1:
+                max-=1
 
         return max
 
@@ -310,7 +313,7 @@ class AssignEntry(Entry):
         in_array = isinstance(assign_node.left.access, Stmt.ArrayAccess)
         self.pre_code = []
 
-        if in_array: # Need to pyt arrayref and index before value
+        if in_array:
             self.pre_code.append(Instruction.Load(store_name, var_stack, True))
             self.pre_code.append(Instruction.Load(assign_node.left.access.index, var_stack, True))
 
@@ -333,13 +336,13 @@ class AssignEntry(Entry):
     def stackCount(self, curr) -> (int, bool):
         max_limit = curr
         for code in (self.pre_code + self.right + [self.left]):
-            (new_curr, new_max) = code.stackCount(curr)
-            if new_curr >= 0:
-                curr = new_curr
-            else:
-                curr = 0
-            if new_max > max_limit:
-                max_limit = new_max
+                (new_curr, new_max) = code.stackCount(curr)
+                if new_curr >= 0:
+                    curr = new_curr
+                else:
+                    curr = 0
+                if new_max > max_limit:
+                    max_limit = new_max
 
         return (curr, max_limit)
 

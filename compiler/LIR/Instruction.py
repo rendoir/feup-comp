@@ -16,6 +16,19 @@ operators = {
     '-':    ('isub ' + NL),
 }
 
+apply_operator  ={
+    '*': (lambda left, right: left * right),
+    '/': (lambda left, right: left / right),
+    '<<': (lambda left, right: left << right),
+    '>>': (lambda left, right: left >> right),
+    '>>>': (lambda left, right: (left % 0x100000000) >> right),
+    '&': (lambda left, right: left & right),
+    '|': (lambda left, right: left | right),
+    '^': (lambda left, right: left ^ right),
+    '+': (lambda left, right: left + right),
+    '-': (lambda left, right: left - right),
+}
+
 def getStackPosition(var_name, var_stack)  -> (Variable, int):
     for i in range(len(var_stack)):
         if isinstance(var_stack[i], str):
@@ -41,16 +54,25 @@ class SimpleInstruction:
 
     def __init__(self, var_name, var_stack):
         global module_vars_used
-        (self.const, self.var_access) = (None, None)
+        (self.const, self.var_access, self.var) = (None, None, None)
 
         if isinstance(var_name, str) and not Variable.Variable.isLiteral(var_name):
             (self.var, self.var_access) = getStackPosition(var_name, var_stack)
+            # if self.var is not None and self.var.altered == 0 and isinstance(self.var, Variable.NumberVariable):
+            #     self.const = self.var.value
+            #     self.var = None
+            #     print("  Var was altered 0 times !!!")
+
             if self.var_access is None:
                 if var_name in self.module_vars:
                     self.var_access = self.module_vars[var_name]
                     module_vars_used += 1
+                    # if self.var_access.altered > 0:
+                    #     self.const = self.var_access.altered
+                    #     self.var_access = None
                 else:
                     raise AssertionError("SimpleInstruction: no var '" + var_name + "' in stack: " + printStack(var_stack))
+
         else:
             self.const = var_name
 
@@ -68,17 +90,22 @@ class Load(SimpleInstruction):
         self.var_name = var_name
         self.negative = (not is_positive)
         self.size = size
+        # if isinstance(self.var, Variable.NumberVariable):
+        #     print('VAR = ' + self.var_name + ', used ' + str(self.var.altered) + ' times')
 
     def __str__(self):
         global module_name
         final_str = ''
         if self.negative and self.const is None:
-            final_str += 'ldc 0' + NL
+            final_str += 'iconst_0' + NL
 
         if isinstance(self.var_access, Variable.Variable):
             final_str += 'getstatic ' + module_name + '/' + self.var_access.name + ' ' + self.var_access.toLIR() + NL
-        elif self.const is not None :
-            final_str += self.constSelector(int(self.const)) + NL
+        elif self.const is not None and Variable.Variable.isLiteral(self.const):
+            if isinstance(self.const, int) or self.const[0] != '"':
+                final_str += self.constSelector(int(self.const)) + NL
+            else:
+                final_str += 'ldc ' + self.const + NL
         else:
             if self.var.type == 'ARR':
                 final_str += self.loadSelector('aload', int(self.var_access)) + NL
@@ -97,7 +124,6 @@ class Load(SimpleInstruction):
         return (curr + 1, curr + 1)
 
     def constSelector(self, const_n) -> str:
-        print('Selecting for n = ' + str(const_n))
         if const_n is -1:
             return 'iconst_m1'
         if 0 <= const_n <= 5:
@@ -137,6 +163,7 @@ class Store(SimpleInstruction):
                 return 'iastore' + NL
             else:
                 return self.storeSelector('istore', int(self.var_access)) + NL
+
 
     def stackCount(self, curr) -> (int, int):
         if self.new_arr:
@@ -192,7 +219,7 @@ class ArrAccess(ComplexInstruction):
 class Operator(ComplexInstruction):
     def __init__(self, left, right, operator):
         super(Operator, self).__init__()
-
+        self.operator = operator
         self.code.append(left)
         self.code.append(right)
         self.code.append(operators[operator])
@@ -202,24 +229,39 @@ class Operator(ComplexInstruction):
         return (ret[0]-1, ret[1])
 
     def __str__(self) -> str:
+        if self.operationUnfold(self.code[0], self.code[1]):
+            return str(self.code[0])
+        else:
+            return super(Operator, self).__str__()
+
+    def operationUnfold(self, left, right) -> bool:
+        global apply_operator
+        all_load = isinstance(left, Load) and isinstance(right, Load)
+        all_const = left.const is not None and right.const is not None
+
+        if all_load and all_const:
+            del self.code[:]
+            result = apply_operator[self.operator](int(left.const), int(right.const))
+            self.code.append(Load(result))
+            return True
+
+        return False
+
+
+    def canUnfoldConstant(self) -> bool:
         left = self.code[0]
         right = self.code[1]
-        if isinstance(left, Load) and isinstance(right, Load) and left.const is not None and right.const is not None: #I can save this instruction
-            del self.code[:]
-            result = int(left.const) + int(right.const)
-            self.code.append(Load(result))
-        elif isinstance(left, Load) and left.const is not None: # Can use iinc
-            left_value = int(left.const)
-            if -128 <= left_value <= 127:
-                del self.code[:]
-                self.code.append('iinc ' + left.var_access + ' ' + left_value)
-        elif isinstance(right, Load) and right.const is not None:
-            right_value = int(right.const)
-            if -128 <= right_value <= 127:
-                del self.code[:]
-                self.code.append('iinc ' + right.var_access + ' ' + right_value)
+        return (isinstance(left, Load) and left.const is not None) or (isinstance(right, Load) and right.const is not None)
 
-        return super(ComplexInstruction, self).__str__()
+    # def constantUnfold(self, constant_inst, store_pos) -> bool:
+    #     if isinstance(constant_inst, Load) and constant_inst.const is not None:
+    #         value = int(constant_inst.const)
+    #         if -128 <= value <= 127:
+    #             del self.code[:]
+    #             self.code.append('iinc ' + str(store_pos) + ' ' + str(constant_inst.const))
+    #             return True
+    #
+    #     return False
 
 
 class ConditionalBranch(ComplexInstruction):

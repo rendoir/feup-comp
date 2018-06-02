@@ -253,7 +253,6 @@ class If(Scope):
                     self.parent.addVar(name, var_obj)
                 else:
                     self.parent.addVar(name, BranchedVariable(name, existing_var.type, var.type))
-                    print("'" + name + "' in both branches but different types :-(")
         else:
             self.vars[name] = var
             self.parent.branched_vars[name] = var

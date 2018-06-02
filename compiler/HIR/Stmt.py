@@ -302,6 +302,22 @@ class RightOP(Statement):
             else:
                 return '???'
 
+    def getValue(self, var_list) -> int:
+        values = []
+        for val in self.value:
+            if isinstance(val.value, int):
+                values.append(val.value)
+
+        n_values = len(values)
+        if n_values is 2 and self.needs_op:
+            return Instruction.apply_operator[self.operator](values[0], values[1])
+        elif n_values is 1 and not self.needs_op:
+            return values[0]
+        elif not self.needs_op and self.arr_size:
+            return self.value[0].value.arr_size
+
+
+
     def getArrSize(self, var_list) -> int:
         if __debug__:
             assert isinstance(var_list, list), "RightOP.getArrSize() 'var_list'\n - Expected 'list'\n - Got: " + str(type(var_list))
@@ -355,20 +371,18 @@ class Assign(Statement):
             if self.left.isArrSize(): #Check if it is a .size assignment
                 printer.sizeAssign(self.line, self.cols, self.left.access.var, str(self.right))
             elif Variable.differentType(right_type, var.type) and var.type != 'ARR': # Check for different types
-                print("RIGHT = " + str(right_type) + ", LEFT = " + var.type)
                 printer.diffTypes(self.line, self.cols, var.name, var.type, right_type)
             else:
                 var.line_init = (self.line, self.cols[0])
         else:
             var_obj = None
-            # TODO add array size and number value
 
             right_type = self.right.getType(var_list)
             if right_type == 'ARR' or right_type is None:
                 arr_size = self.right.getArrSize(var_list)
                 var_obj = ArrayVariable(var_name, arr_size, (self.line, self.cols[0]), (self.line, self.cols[0]))
             else:
-                var_obj = NumberVariable(var_name, 0, (self.line, self.cols[0]), (self.line, self.cols[0]))
+                var_obj = NumberVariable(var_name, self.right.getValue(var_list), (self.line, self.cols[0]), (self.line, self.cols[0]))
             self.parent.addVar(var_name, var_obj)
 
     def __varExists(self, var_name, var_lists) -> Variable:
@@ -389,6 +403,7 @@ class ArrayAccess(Statement):
             assert isinstance(node, yalParser.Array_accessContext), "ArrayAccess.__init__() 'node'\n - Expected 'yalParser.Array_accessContext'\n - Got: " + str(type(node))
             assert isinstance(parent, Scope), "ArrayAccess.__init__() 'parent'\n - Expected 'Scope'\n - Got: " + str(type(node))
 
+        self.arr_size = None
         self.var = str(node.children[0])
         self.index = str(node.children[1].children[0])
 
@@ -403,6 +418,8 @@ class ArrayAccess(Statement):
             if index_var is not None:
                 if not isinstance(index_var, NumberVariable):
                     printer.arrSizeNaN(self.line, self.cols, var.type)
+                else:
+                    self.arr_size = index_var.value
             else:
                 if Scope.isBranchVar(self.parent, self.index):
                     printer.branchingDecl(self.line, self.cols, self.index)
@@ -458,7 +475,6 @@ class ScalarAccess(Statement):
 
         if var is not None:
             if not var.initialized() and report_existance:
-                print("Init = " + str(var))
                 if isinstance(var, BranchedVariable):
                     printer.branchingVars(self.line, self.cols, self.var, var.type1, var.type2)
                     var.wasReported()
@@ -467,6 +483,9 @@ class ScalarAccess(Statement):
 
             elif self.size and not isinstance(var, ArrayVariable):
                 printer.numSize(self.line, self.cols, var.name, var.type)
+
+            if report_existance:
+                var.altered+=1
 
         elif report_existance:
             if Scope.isBranchVar(self.parent, self.var):
@@ -589,20 +608,7 @@ class Term(Statement):
         return False
 
     def isArray(self, var_list) -> bool:
-        if self.is_array is None:
-            if isinstance(self.value, ScalarAccess) and not self.value.size:
-                var = getVar(self.value.var, var_list)
-                if var is not None:
-                    self.is_array = isinstance(var, ArrayVariable)
-                    return self.is_array
-                else: # Due to error propagation
-                    return False
-            elif isinstance(self.value, Call):
-                self.is_array = (self.value.returnType() == 'ARR')
-                return self.is_array
-        else:
-            return self.is_array
-
+        return self.is_array
 
     def checkSemantics(self, printer, var_list):
         if __debug__:
@@ -611,6 +617,18 @@ class Term(Statement):
 
         if not isinstance(self.value, int):
             self.value.checkSemantics(printer, var_list)
+
+        if isinstance(self.value, ScalarAccess) and not self.value.size:
+            var = getVar(self.value.var, var_list)
+            if var is not None:
+                self.is_array = isinstance(var, ArrayVariable)
+            else:
+                self.is_array = False
+        elif isinstance(self.value, Call):
+            self.is_array = (self.value.returnType() == 'ARR')
+        else:
+            self.is_array = False
+
 
     def getVarName(self) -> str:
         if isinstance(self.value, ArrayAccess) or isinstance(self.value, ScalarAccess):

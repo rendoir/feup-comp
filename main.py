@@ -10,40 +10,48 @@ RESET       = "\033[0;0m"
 
 EXTENSION = '.tmp'
 
+verbose = True
+
 # ParserParser class will have a method for each 'rule' in the parser.
 # So since the parser has rules such as 'vector', 'expression' and 'pyClass'
 # It generates a method to parse each one of these
 def main(argv):
+    global verbose
     if not correctUsage(argv):
         printUsage()
         return
+    else:
+        parseArgs(argv)
 
     input = FileStream(argv[1])
     printer = Printer.ErrorPrinter(input)
     lexer = yalLexer(input)
     stream = CommonTokenStream(lexer)
     parser = yalRealParser(stream)
-    parser._listeners = [yalErrorListener()]
+    parser._listeners = [yalErrorListener(verbose)]
     parser.addParseListener(yalParserListener())
     tree = parser.module()
 
     if parser.getNumberOfSyntaxErrors() > 0:
-        print(" -> " + RED + str(parser.getNumberOfSyntaxErrors()) + RESET + " Syntax errors detected!")
-        return
+        if verbose:
+            print(" -> " + RED + str(parser.getNumberOfSyntaxErrors()) + RESET + " Syntax errors detected!")
+
+        sys.exit(10)
 
 
     module = Module()
     module.parseTree(tree, printer)
     module.semanticCheck(printer)
 
-    sem_errors = printer.printMessages()
+    sem_errors = printer.printMessages(verbose)
     if not sem_errors:
         llir_tree = LowLevelTree(module)
         file_name = extractFileName(argv[1]) + EXTENSION
         writeToFile(file_name, str(llir_tree))
-        print(GREEN + "\n ---> SUCCESS <---" + RESET + "\nOutput written to '" + file_name + "'")
+        if verbose:
+            print(GREEN + "\n ---> SUCCESS <---" + RESET + "\nOutput written to '" + file_name + "'")
 
-    sys.exit(1 if sem_errors else 0)
+    sys.exit(10 if sem_errors else 0)
 
 def extractFileName(file_name) -> str:
     for i in range(len(file_name) - 1, -1, -1):
@@ -55,12 +63,13 @@ def writeToFile(file_name, content):
         output.write(content)
 
 def correctUsage(argv) -> bool:
-    if len(argv) is 2:
+    arg_n = len(argv)
+    if 2 <= arg_n <= 3:
         if not Path(argv[1]).is_file():
             print("File '" + argv[1] + "' does not exist!")
             return False
     else:
-        if len(argv) > 2:
+        if arg_n > 3:
             print("Too many arguments!")
         else:
             print("Not enough arguments!")
@@ -70,6 +79,11 @@ def correctUsage(argv) -> bool:
 
 def printUsage():
     print("Usage:\n    python3 main.py <file_name>\n")
+
+def parseArgs(argv):
+    global verbose
+    if '--quiet' in argv or '-q' in argv:
+        verbose = False
 
 if __name__ == '__main__':
     main(sys.argv)

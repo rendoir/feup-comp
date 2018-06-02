@@ -5,6 +5,7 @@ class Variable:
         self.type = type
         self.line_init = init
         self.line_decl = decl
+        self.altered = 0
 
     def __str__(self):
         pass
@@ -37,7 +38,6 @@ class Variable:
         if var.isdigit() or (var[0] == '-' and var[1:].isdigit()):
             return True;
 
-        print('Var "' + var + '" not a digit')
         return False
 
     def toLIR() -> str:

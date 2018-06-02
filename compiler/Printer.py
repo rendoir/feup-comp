@@ -76,7 +76,6 @@ class ErrorPrinter:
 
         error_message += RESET + "\n - " + detail_msg + RESET
 
-        print("ADDED '" + detail_msg + "'")
         self.errors.append(error_message)
 
     def __suggestion(text: str) -> str:
@@ -123,38 +122,41 @@ class ErrorPrinter:
 
     #Prints the error messages and clears the error array
     # Returns true if there was a semantic error
-    def printMessages(self) -> bool:
-        error = True
-        if len(self.errors) > 0 or len(self.warnings) > 0:
-            print("--- BEGIN SEMANTIC ANALYZIS ---")
-
-        for error in self.errors:
-            print(error)
-
-        final_msg = ""
-        if len(self.errors) is 1:
-            final_msg += RED + "--- " + str(len(self.errors))  + " ERROR "
-        elif len(self.errors) > 1:
-            final_msg += RED + "--- " + str(len(self.errors))  + " ERRORS "
+    def printMessages(self, verbose) -> bool:
+        if not verbose:
+            return len(self.errors) > 0
         else:
-            error = False
-            final_msg += " --- 0 ERRORS "
+            error = True
+            if len(self.errors) > 0 or len(self.warnings) > 0:
+                print("--- BEGIN SEMANTIC ANALYZIS ---")
 
-        for warning in self.warnings:
-            print(warning)
+            for error in self.errors:
+                print(error)
 
-        if len(self.warnings) is 1:
-            final_msg += GREEN + str(len(self.warnings)) + " WARNING  ---" + RESET
-        elif len(self.warnings) > 1:
-            final_msg += GREEN + str(len(self.errors))  + " WARNINGS ---" + RESET
-        else:
-            final_msg += " 0 WARNINGS --- " + RESET
+            final_msg = ""
+            if len(self.errors) is 1:
+                final_msg += RED + "--- " + str(len(self.errors))  + " ERROR "
+            elif len(self.errors) > 1:
+                final_msg += RED + "--- " + str(len(self.errors))  + " ERRORS "
+            else:
+                error = False
+                final_msg += " --- 0 ERRORS "
 
-        if len(self.errors) > 0 or len(self.warnings) > 0:
-            print("\n" + final_msg)
+            for warning in self.warnings:
+                print(warning)
 
-        self.errors[:] = []
-        return error
+            if len(self.warnings) is 1:
+                final_msg += GREEN + str(len(self.warnings)) + " WARNING  ---" + RESET
+            elif len(self.warnings) > 1:
+                final_msg += GREEN + str(len(self.errors))  + " WARNINGS ---" + RESET
+            else:
+                final_msg += " 0 WARNINGS --- " + RESET
+
+            if len(self.errors) > 0 or len(self.warnings) > 0:
+                print("\n" + final_msg)
+
+            self.errors[:] = []
+            return error
 
     # ----- ERROR MESSAGES -------
 
