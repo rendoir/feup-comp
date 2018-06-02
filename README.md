@@ -61,5 +61,10 @@ The parser code is in the .g4 file.
  - :white_check_mark: Constant folding
  - :white_check_mark: While and If templating (saves 1 goto)
  - :white_check_mark: Lower cost instruction selection
+   
+   - Checks the size of the constants to use and uses the lowest available instruction from bipush, sipush and ldc.
+   - Uses iload_#, istore_# when available
+   - Uses iinc when possible, even for subtraction, in which case the compiler changes the constant signal
+       
 
   
