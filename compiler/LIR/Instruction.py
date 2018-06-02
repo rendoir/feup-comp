@@ -58,18 +58,12 @@ class SimpleInstruction:
 
         if isinstance(var_name, str) and not Variable.Variable.isLiteral(var_name):
             (self.var, self.var_access) = getStackPosition(var_name, var_stack)
-            # if self.var is not None and self.var.altered == 0 and isinstance(self.var, Variable.NumberVariable):
-            #     self.const = self.var.value
-            #     self.var = None
-            #     print("  Var was altered 0 times !!!")
 
             if self.var_access is None:
                 if var_name in self.module_vars:
-                    self.var_access = self.module_vars[var_name]
-                    module_vars_used += 1
-                    # if self.var_access.altered > 0:
-                    #     self.const = self.var_access.altered
-                    #     self.var_access = None
+                    self.var = self.module_vars[var_name]
+                    if self.var.altered > 0:
+                        module_vars_used += 1
                 else:
                     raise AssertionError("SimpleInstruction: no var '" + var_name + "' in stack: " + printStack(var_stack))
 
@@ -90,8 +84,10 @@ class Load(SimpleInstruction):
         self.var_name = var_name
         self.negative = (not is_positive)
         self.size = size
-        # if isinstance(self.var, Variable.NumberVariable):
-        #     print('VAR = ' + self.var_name + ', used ' + str(self.var.altered) + ' times')
+        if isinstance(self.var, Variable.NumberVariable) and self.var.altered is 0 and self.var.value is not None:
+            self.const = self.var.value
+            self.var = None
+            self.var_access = None
 
     def __str__(self):
         global module_name
@@ -99,9 +95,9 @@ class Load(SimpleInstruction):
         if self.negative and self.const is None:
             final_str += 'iconst_0' + NL
 
-        if isinstance(self.var_access, Variable.Variable):
-            final_str += 'getstatic ' + module_name + '/' + self.var_access.name + ' ' + self.var_access.toLIR() + NL
-        elif self.const is not None and Variable.Variable.isLiteral(self.const):
+        if isinstance(self.var, Variable.Variable):
+            final_str += 'getstatic ' + module_name + '/' + self.var.name + ' ' + self.var.toLIR() + NL
+        elif self.const is not None:
             if isinstance(self.const, int) or self.const[0] != '"':
                 final_str += self.constSelector(int(self.const)) + NL
             else:
@@ -154,8 +150,8 @@ class Store(SimpleInstruction):
 
     def __str__(self):
         global module_name
-        if isinstance(self.var_access, Variable.Variable):
-            return 'putstatic ' + module_name + '/' + self.var_access.name + ' ' + self.var_access.toLIR() + NL
+        if isinstance(self.var, Variable.Variable):
+            return 'putstatic ' + module_name + '/' + self.var.name + ' ' + self.var.toLIR() + NL
         else:
             if self.new_arr:
                 return self.storeSelector('astore', int(self.var_access)) + NL
@@ -297,13 +293,12 @@ class ConditionalBranch(ComplexInstruction):
 
         # Add True Code
         for code_line in true_code:
-            self.template.append(code_line)
+            if code_line != '':
+                self.template.append(code_line)
 
         # Add goto and label
         self.template.append('goto ' + labels[1] + NL)
         self.template.append(NL + self._printLabel(labels[0]) + NL)
-
-
 
     def _printLabel(self, label_name) -> str:
         return label_name + ':'
@@ -325,7 +320,8 @@ class IfBranching(ConditionalBranch):
             final_str += str(code_line)
 
         for code_line in self.false_code:
-            final_str += str(code_line)
+            if code_line != '':
+                final_str += str(code_line)
 
         if self.has_else:
             final_str += self._printLabel(self.end_label) + NL

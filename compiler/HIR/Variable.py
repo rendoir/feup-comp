@@ -7,9 +7,6 @@ class Variable:
         self.line_decl = decl
         self.altered = 0
 
-    def __str__(self):
-        pass
-
     def setInit(self, value: int, init: int):
         raise NotImplementedError("Implement setInit()!")
 
@@ -49,7 +46,7 @@ class NumberVariable (Variable):
         self.value = value
 
     def __str__(self):
-        return self.name;
+        return "NUM -> '" + self.name + "' = " + str(self.value) + ", altered " + str(self.altered) + " times"
 
     def setInit(self, init: int):
         if self.init is None:
@@ -64,7 +61,7 @@ class ArrayVariable(Variable):
         self.size = size;
 
     def __str__(self):
-        return self.name + "[]"
+        return "ARR -> '" + self.name + "' = " + str(self.size) + ", altered " + str(self.altered) + " times"
 
     def validAccess(self, access) -> bool:
         if __debug__:

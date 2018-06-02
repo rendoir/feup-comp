@@ -1,5 +1,5 @@
 from ..HIR import CodeScope, Stmt
-from ..HIR.Variable import NumberVariable, ArrayVariable
+from ..HIR.Variable import NumberVariable, ArrayVariable, Variable
 from . import Instruction
 
 STRING = 'Ljava/lang/String;'
@@ -117,6 +117,7 @@ class Entry:
         if stack_size > self.max_locals:
             self.max_locals = stack_size
 
+
         return lines
 
     # Handles accessing the left_op value, for assignments need to overload this
@@ -158,12 +159,15 @@ class Entry:
     def _getMaxLocals(self) -> int:
         return self.max_locals
 
-    def _updateStack(self, var_stack, node):
+    def _updateStack(self, var_stack, node) -> Variable:
         if (len(var_stack) >= 1):
             latest_var = var_stack[-1]
             if isinstance(latest_var, str) and latest_var != 'args':
                 (type, var) = getVar(latest_var, node)
                 var_stack[-1] = var
+                return var
+
+        return None
 
     def countStackLimit(code_lines) -> (int, int):
         max_limit = 0
@@ -207,7 +211,8 @@ class FunctionEntry(Entry):
         final_str += self.__functionHeader() + NL
         for line in self.code_lines:
             line_str = str(line)
-            final_str += line_str + NL
+            if line_str != '':
+                final_str += line_str + NL
 
         final_str += self.__returnString()
         return final_str
@@ -318,20 +323,31 @@ class AssignEntry(Entry):
             self.pre_code.append(Instruction.Load(assign_node.left.access.index, var_stack, True))
 
         self.left = Instruction.Store(store_name, var_stack, in_array, assign_node.right.isArray())
-        self._updateStack(var_stack, assign_node.parent)
+        updated_var = self._updateStack(var_stack, assign_node.parent)
+        self.not_needed = self.isVarNeeded(assign_node, updated_var, store_name)
         self._processRight(assign_node.right, var_stack)
 
     def __str__(self) -> str:
-        final_str = ''
-        for pre in self.pre_code:
-            final_str += str(pre)
+        if not self.not_needed:
+            final_str = ''
+            for pre in self.pre_code:
+                final_str += str(pre)
 
-        for right_op in self.right:
-            final_str += str(right_op)
+            for right_op in self.right:
+                final_str += str(right_op)
 
 
-        final_str += str(self.left)
-        return final_str
+            final_str += str(self.left)
+            return final_str
+        else:
+            return ''
+
+    def isVarNeeded(self, node, var, var_name) -> bool:
+        if var is not None:
+            return var.altered == 0
+        else:
+            (type, var) = getVar(var_name, node.parent)
+            return var.altered == 0
 
     def stackCount(self, curr) -> (int, bool):
         max_limit = curr
@@ -345,6 +361,12 @@ class AssignEntry(Entry):
                     max_limit = new_max
 
         return (curr, max_limit)
+
+    def _getMaxLocals(self) -> int:
+        if self.not_needed:
+            return -1
+        else:
+            return self.max_locals
 
 class ComparisonEntry(Entry):
     def __init__(self, node, stack, labels):
@@ -381,6 +403,8 @@ class WhileEntry(ComparisonEntry):
                 max_n = line._getMaxLocals()
                 if max_n > max:
                     max = max_n
+                elif max_n is -1:
+                    max -= 1
 
         return max
 
@@ -410,5 +434,7 @@ class IfEntry(ComparisonEntry):
                 max_n = line._getMaxLocals()
                 if max_n > max:
                     max = max_n
+                elif max_n is -1:
+                    max -= 1
 
         return max

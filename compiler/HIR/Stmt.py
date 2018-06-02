@@ -307,9 +307,13 @@ class RightOP(Statement):
         for val in self.value:
             if isinstance(val.value, int):
                 values.append(val.value)
+            elif isinstance(val.value, ScalarAccess):
+                values.append(val.value.getValue(var_list))
 
         n_values = len(values)
         if n_values is 2 and self.needs_op:
+            if values[0] is None or values[1] is None:
+                return None
             return Instruction.apply_operator[self.operator](values[0], values[1])
         elif n_values is 1 and not self.needs_op:
             return values[0]
@@ -484,7 +488,7 @@ class ScalarAccess(Statement):
             elif self.size and not isinstance(var, ArrayVariable):
                 printer.numSize(self.line, self.cols, var.name, var.type)
 
-            if report_existance:
+            if not report_existance:
                 var.altered+=1
 
         elif report_existance:
