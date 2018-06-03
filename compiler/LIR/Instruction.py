@@ -105,7 +105,7 @@ class Load(SimpleInstruction):
         if isinstance(self.var_access, Variable.Variable):
             final_str += 'getstatic ' + module_name + '/' + self.var_access.name + ' ' + self.var_access.toLIR() + NL
         elif self.const is not None:
-            if isinstance(self.const, int) or self.const[0] != '"':
+            if isinstance(self.const, int) or isinstance(self.const, float) or self.const[0] != '"':
                 final_str += self.constSelector(int(self.const)) + NL
             else:
                 final_str += 'ldc ' + self.const + NL
@@ -238,8 +238,50 @@ class Operator(ComplexInstruction):
     def __str__(self) -> str:
         if len(self.code) > 1 and self.operationUnfold(self.code[0], self.code[1]):
             return str(self.code[0])
+        elif len(self.code) > 1 and self.deadOperation(self.code[0], self.code[1]):
+            return str(self.code[0])
         else:
             return super(Operator, self).__str__()
+
+    def deadOperation(self, left, right) -> bool:
+        if isinstance(left, Load) and isinstance(right, Load):
+            load = None
+            left_val = None
+            right_val = None
+            if left.const is not None:
+                left_val = int(left.const)
+            if right.const is not None:
+                right_val = int(right.const)
+
+            if self.operator == '+' or self.operator == '-':
+                if left_val is 0:
+                    load = right
+                elif right_val is 0:
+                    load = left
+            elif self.operator == '*':
+                if left_val is 1:
+                    load = right
+                elif right_val is 1:
+                    load = left
+                elif left_val is 0 or right_val is 0:
+                    load = 'iconst_0' + NL
+            elif self.operator == '/':
+                if right_val is 1:
+                    load = left
+                elif self.sameVar(left, right):
+                    load = 'iconst_1' + NL
+            elif self.operator == '<<' or self.operator == '>>' or self.operator == '>>>' and right_val is 0:
+                load = left
+
+            if load is not None:
+                del self.code[:]
+                self.code.append(load)
+                return True
+        return False
+
+
+    def sameVar(self, left, right) -> bool:
+        return left.var is not None and right.var is not None and left.var.name == right.var.name
 
     def operationUnfold(self, left, right) -> bool:
         global apply_operator
@@ -267,25 +309,27 @@ class Operator(ComplexInstruction):
     def tryUsingIInc(self, access) -> bool:
         left = self.code[0]
         right = self.code[1]
-        left_can = isinstance(left, Load) and self.__isDigit(left.const) and -128 <= int(left.const) <= 127
-        right_can = isinstance(right, Load) and self.__isDigit(right.const) and -128 <= int(right.const) <= 127
-        op_can = self.operator == '+' or self.operator == '-'
-        # Check if only either right of left are a constant
-        # If both are a constant the they will be unfolded later on
-        if op_can and (right_can is not left_can):
-            if right_can:
-                value = int(right.const)
-            else:
-                value = int(left.const)
 
-            if self.operator == '-':
-                value *= -1
+        if not self.deadOperation(left, right):
+            left_can = isinstance(left, Load) and self.__isDigit(left.const) and -128 <= int(left.const) <= 127
+            right_can = isinstance(right, Load) and self.__isDigit(right.const) and -128 <= int(right.const) <= 127
+            op_can = self.operator == '+' or self.operator == '-'
+            # Check if only either right of left are a constant
+            # If both are a constant the they will be unfolded later on
+            if op_can and (right_can is not left_can):
+                if right_can:
+                    value = int(right.const)
+                else:
+                    value = int(left.const)
 
-            if -128 <= value <= 127:
-                self.iinc = True
-                del self.code[:]
-                self.code.append('iinc ' + str(access) + ' ' + str(value) + NL)
-                return True
+                if self.operator == '-':
+                    value *= -1
+
+                if -128 <= value <= 127:
+                    self.iinc = True
+                    del self.code[:]
+                    self.code.append('iinc ' + str(access) + ' ' + str(value) + NL)
+                    return True
 
         return False
 

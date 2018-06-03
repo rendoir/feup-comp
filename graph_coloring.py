@@ -5,7 +5,7 @@ class Vertex:
         self.name = name
         self.neighbours = []
         self.color = None
-        
+
     def addNeighbour(self, neighbour):
         if neighbour not in self.neighbours:
             self.neighbours.append(neighbour)
@@ -19,7 +19,7 @@ class Vertex:
         if neighbour in self.neighbours:
             self.neighbours.remove(neighbour)
             neighbour.neighbours.remove(self)
-        
+
     def removeNeighbours(self, neighbours):
         for neighbour in neighbours:
             self.removeNeighbour(neighbour)
@@ -38,8 +38,8 @@ class Vertex:
 
 '''
 A Graph has a dictionary whose key is a vertex name and its value a list of vertices, that represent edges
-It is a undirected graph, meaning that A -> B  <=>  B -> A. 
-This is taken into consideration as vertices[A] will contain B and vertices[B] will contain A. 
+It is a undirected graph, meaning that A -> B  <=>  B -> A.
+This is taken into consideration as vertices[A] will contain B and vertices[B] will contain A.
 '''
 class Graph:
     def __init__(self, vertices = {}):
@@ -58,12 +58,12 @@ class Graph:
     def addVertices(self, vertices):
         for vertex in vertices:
             self.addVertex(vertex)
-    
+
     def addEdge(self, vertex_from, vertex_to):
         vertex_from.addNeighbour(vertex_to)
         self.vertices[vertex_from] = vertex_from.neighbours
         self.vertices[vertex_to] = vertex_to.neighbours
-                
+
     def addEdges(self, edges):
         for edge in edges:
             self.addEdge(edge[0],edge[1])
@@ -73,20 +73,20 @@ class Graph:
             self.removeEdge(vertex, self.vertices[vertex][0])
         del self.name_to_current[vertex.name]
         del self.vertices[vertex]
-        
+
     def removeVertices(self, vertices):
         for vertex in vertices:
             self.removeVertex(vertex)
-    
+
     def removeEdge(self, vertex_from, vertex_to):
         vertex_from.removeNeighbour(vertex_to)
         self.vertices[vertex_from] = vertex_from.neighbours
         self.vertices[vertex_to] = vertex_to.neighbours
-                
+
     def removeEdges(self, edges):
         for edge in edges:
-            self.removeEdge(edge[0],edge[1])       
-    
+            self.removeEdge(edge[0],edge[1])
+
     def hasEdge(self, vertex_from, vertex_to):
         if vertex_from in self.vertices:
             return vertex_from.hasEdge(vertex_to)
@@ -128,9 +128,9 @@ def graphColoring(in_graph, n):
         graph.addVertex(vertex_to_color)
 
         #print("Coloring ", vertex_to_color)
-       
+
         original_vertex = graph.name_to_original[vertex_to_color.name]
-        
+
         for vertex_to in in_graph.vertices[original_vertex]:
             if vertex_to.name in graph.name_to_current:
                 new_vertex_to = graph.name_to_current[vertex_to.name]
@@ -143,15 +143,15 @@ def graphColoring(in_graph, n):
                     available_colors.remove(vertex_to_color_neighbour.color)
         if available_colors:
             vertex_to_color.color = available_colors[0]
-            
+
         #print("Colored ", vertex_to_color, " with ", vertex_to_color.color)
         #print(vertex_stack)
         #graph.show()
     print("Colored:")
     graph.show()
     return graph
-        
-        
+
+
 # Test
 a = Vertex('A')
 b = Vertex('B')
@@ -159,12 +159,12 @@ c = Vertex('C')
 d = Vertex('D')
 e = Vertex('E')
 
-a.addNeighbours([b,c,e]) 
+a.addNeighbours([b,c,e])
 b.addNeighbours([a,c])
 c.addNeighbours([b,d,a,e])
 d.addNeighbour(c)
 e.addNeighbours([a,c])
-    
+
 g = Graph()
 g.addVertices([a,b,c,d,e])
 g.addEdge(b,d)

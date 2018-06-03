@@ -74,7 +74,6 @@ class LowLevelTree:
         final_str = ''
 
         for (var_name, var_info) in self.mod_vars.items():
-            print("STATIC VAR = " + str(var_info))
             if not var_info.unused():
                 final_str += '.field static ' + var_name + ' ' + var_info.toLIR() + NL
 
@@ -328,8 +327,9 @@ class AssignEntry(Entry):
         updated_var = self._updateStack(var_stack, assign_node.parent)
         self.not_needed = self.isVarNeeded(assign_node, updated_var, store_name)
         self._processRight(assign_node.right, var_stack)
-        if isinstance(self.right[0], Instruction.Operator) and self.right[0].tryUsingIInc(self.left.var_access):
-            self.left = ''
+        if isinstance(self.right[0], Instruction.Operator) and self.canUseIInc(updated_var):
+            if self.right[0].tryUsingIInc(self.left.var_access):
+                self.left = ''
 
     def __str__(self) -> str:
         if not self.not_needed:
@@ -345,6 +345,17 @@ class AssignEntry(Entry):
             return final_str
         else:
             return ''
+
+    def canUseIInc(self, updated_var) -> bool:
+        if updated_var is not None:
+            name = updated_var.name
+            left = self.right[0].code[0]
+            right = self.right[0].code[1]
+            all_load = isinstance(left, Instruction.Load) and isinstance(right, Instruction.Load)
+            left_matches = isinstance(left, Instruction.Load) and left.var is not None and left.var.name == name
+            right_matches = isinstance(right, Instruction.Load) and right.var is not None and right.var.name == name
+            return left_matches or right_matches
+        return False
 
     def isVarNeeded(self, node, var, var_name) -> bool:
         if var is not None:
