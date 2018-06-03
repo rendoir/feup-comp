@@ -67,6 +67,11 @@ The parser code is in the .g4 file.
    - Checks the size of the constants to use and uses the lowest available instruction from bipush, sipush and ldc.
    - Uses iload_#, istore_# when available
    - Uses iinc when possible, even for subtraction, in which case the compiler changes the constant signal
-       
-
+   
+- :white_check_mark: Algebraic Simplification
+   
+   - Sums/Subtractions by 0
+   - Multiplications by 1 or 0
+   - Divisions by self or 1
+   - Bitwise-Shifts by 0
   
