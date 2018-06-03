@@ -377,6 +377,8 @@ class Assign(Statement):
             elif Variable.differentType(right_type, var.type) and var.type != 'ARR': # Check for different types
                 printer.diffTypes(self.line, self.cols, var.name, var.type, right_type)
             else:
+                if var.type == 'ARR' and Variable.differentType(right_type, var.type):
+                    self.left.access.arr_fill = True
                 var.line_init = (self.line, self.cols[0])
         else:
             var_obj = None
@@ -407,6 +409,7 @@ class ArrayAccess(Statement):
             assert isinstance(node, yalParser.Array_accessContext), "ArrayAccess.__init__() 'node'\n - Expected 'yalParser.Array_accessContext'\n - Got: " + str(type(node))
             assert isinstance(parent, Scope), "ArrayAccess.__init__() 'parent'\n - Expected 'Scope'\n - Got: " + str(type(node))
 
+        self.arr_fill = False
         self.arr_size = None
         self.var = str(node.children[0])
         self.index = str(node.children[1].children[0])
@@ -458,7 +461,7 @@ class ScalarAccess(Statement):
             assert isinstance(node, yalParser.Scalar_accessContext), "ScalarAccess.__init__() 'node'\n - Expected 'yalParser.Scalar_accessContext'\n - Got: " + str(type(node))
             assert isinstance(parent, Scope), "ScalarAccess.__init__() 'parent'\n - Expected 'Scope'\n - Got: " + str(type(parent))
 
-
+        self.arr_fill = False
         self.var = str(node.children[0])
         self.size = (len(node.children) is 2)
 

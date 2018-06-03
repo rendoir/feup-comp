@@ -1,0 +1,11 @@
+module array
+{
+  N = 10;
+
+	function main()
+	{
+	 a = [N];
+   a = 5;
+	}
+
+}

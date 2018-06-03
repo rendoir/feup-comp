@@ -318,18 +318,27 @@ class AssignEntry(Entry):
         store_name = assign_node.left.access.var
         in_array = isinstance(assign_node.left.access, Stmt.ArrayAccess)
         self.pre_code = []
+        self.left = ''
+        self.not_needed = False
 
-        if in_array:
-            self.pre_code.append(Instruction.Load(store_name, var_stack, True))
-            self.pre_code.append(Instruction.Load(assign_node.left.access.index, var_stack, True))
-
-        self.left = Instruction.Store(store_name, var_stack, in_array, assign_node.right.isArray())
-        updated_var = self._updateStack(var_stack, assign_node.parent)
-        self.not_needed = self.isVarNeeded(assign_node, updated_var, store_name)
         self._processRight(assign_node.right, var_stack)
-        if isinstance(self.right[0], Instruction.Operator) and self.canUseIInc(updated_var):
-            if self.right[0].tryUsingIInc(self.left.var_access):
-                self.left = ''
+        if isinstance(assign_node.left.access, Stmt.ScalarAccess) and assign_node.left.access.arr_fill:
+            print("\n ------- ARRAY FILL ------- \n")
+            self.pre_code.append(Instruction.FillArray(store_name, var_stack, self.right[0]))
+            self.right = []
+        else:
+            if in_array:
+                self.pre_code.append(Instruction.Load(store_name, var_stack, True))
+                self.pre_code.append(Instruction.Load(assign_node.left.access.index, var_stack, True))
+
+
+            self.left = Instruction.Store(store_name, var_stack, in_array, assign_node.right.isArray())
+            updated_var = self._updateStack(var_stack, assign_node.parent)
+            self.not_needed = self.isVarNeeded(assign_node, updated_var, store_name)
+
+            if isinstance(self.right[0], Instruction.Operator) and self.canUseIInc(updated_var):
+                if self.right[0].tryUsingIInc(self.left.var_access):
+                    self.left = ''
 
     def __str__(self) -> str:
         if not self.not_needed:
@@ -347,7 +356,7 @@ class AssignEntry(Entry):
             return ''
 
     def canUseIInc(self, updated_var) -> bool:
-        if updated_var is not None:
+        if updated_var is not None and len(self.right[0].code) > 1:
             name = updated_var.name
             left = self.right[0].code[0]
             right = self.right[0].code[1]

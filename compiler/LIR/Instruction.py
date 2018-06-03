@@ -1,5 +1,8 @@
 from ..HIR import Variable
 from . import Tree
+import string
+import random
+
 NL = '\n'
 module_name = None
 module_vars_used = 0
@@ -95,7 +98,7 @@ class Load(SimpleInstruction):
             self.const = self.var_access.value
             self.var = None
             self.var_access = None
-
+            
     def __str__(self):
         global module_name
         final_str = ''
@@ -223,10 +226,17 @@ class Operator(ComplexInstruction):
     def __init__(self, left, right, operator):
         super(Operator, self).__init__()
         self.iinc = False
+        self.can_fold = False
         self.operator = operator
         self.code.append(left)
         self.code.append(right)
         self.code.append(operators[operator])
+        if self.canFoldConstant(left, right):
+            self.can_fold = True
+            self.operationUnfold(left, right)
+
+    def canFoldConstant(self, left, right) -> bool:
+        return isinstance(left, Load) and isinstance(right, Load) and left.const is not None and right.const is not None
 
     def stackCount(self, curr) -> (int, int):
         ret = Tree.Entry.countStackLimit(self.code)
@@ -236,7 +246,7 @@ class Operator(ComplexInstruction):
             return (ret[0], ret[1] + 2)
 
     def __str__(self) -> str:
-        if len(self.code) > 1 and self.operationUnfold(self.code[0], self.code[1]):
+        if self.can_fold:
             return str(self.code[0])
         elif len(self.code) > 1 and self.deadOperation(self.code[0], self.code[1]):
             return str(self.code[0])
@@ -332,6 +342,39 @@ class Operator(ComplexInstruction):
                     return True
 
         return False
+
+class FillArray(ComplexInstruction):
+    def __init__(self, arr_name, var_stack, fill_number):
+        super(FillArray, self).__init__()
+        i_name = ''
+        for i in range(0, 15):
+            i_name += random.choice(string.ascii_letters)
+
+
+
+        self.code.append(Load(0))
+        var_stack.append(Variable.NumberVariable(i_name, None, None, None))
+        self.code.append(Store(i_name, var_stack))
+        self.code.append('' + NL)
+
+        true_code = []
+        true_code.append(Load(arr_name, var_stack))
+        true_code.append(Load(i_name, var_stack))
+        if isinstance(fill_number, Load):
+            true_code.append(fill_number)
+        else:
+            true_code.append(fill_number.code[0])
+
+        true_code.append(Store(arr_name, var_stack, True))
+        true_code.append('iinc ' + self.code[-2].var_access + ' ' + '1' + NL)
+
+        labels = [Tree.WhileEntry.label_end + str(Tree.while_label), Tree.WhileEntry.label_start + str(Tree.while_label)]
+        Tree.while_label += 1
+        self.code.append(WhileBranching([Load(i_name, var_stack)], [Load(arr_name, var_stack, True, True)], '<', true_code, labels))
+
+
+    def stackCount(self, curr) -> (int, int):
+        return (curr, curr+2)
 
 class ConditionalBranch(ComplexInstruction):
     cmp_operators_neg = {
