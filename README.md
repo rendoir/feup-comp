@@ -58,6 +58,8 @@ The parser code is in the .g4 file.
 
 ### Optimizations
  - :white_check_mark: Constant propagation
+   - Works for both local variables and module variables
+ 
  - :white_check_mark: Constant folding
  - :white_check_mark: While and If templating (saves 1 goto)
  - :white_check_mark: Lower cost instruction selection
