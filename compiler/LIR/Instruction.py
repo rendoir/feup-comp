@@ -85,6 +85,9 @@ class SimpleInstruction:
 
 # TODO Check constants
 class Load(SimpleInstruction):
+    # Variable loaded will be in self.var in case of a local variable
+    # If it is a module variable the variable will be in self.var_access
+    # If it is a constant it will be in neither of them and self.const will be different from None
     def __init__(self, var_name, var_stack=None, is_positive=True, size=False):
         super(Load, self).__init__(var_name, var_stack)
         self.var_name = var_name
@@ -98,7 +101,7 @@ class Load(SimpleInstruction):
             self.const = self.var_access.value
             self.var = None
             self.var_access = None
-            
+
     def __str__(self):
         global module_name
         final_str = ''
@@ -148,6 +151,13 @@ class Load(SimpleInstruction):
             return load_type + ' ' + str(access_n)
 
 class Store(SimpleInstruction):
+    # In case it is the first time the variable is used, an AssertionError is thrown, which will
+    # contain the number of unused variables in the stack, afterwards the variable name is inserted
+    # into the stack and will subsequently (in Tree.py) be updated into  the actual Varaible
+    #
+    # In case it is a previously used variable then:
+    # Variable stored will be in self.var in case of a local variable
+    # If it is a module variable the variable will be in self.var_access
     def __init__(self, var_name, var_stack, in_array=False, new_arr=False):
         try:
             super(Store, self).__init__(var_name, var_stack)
