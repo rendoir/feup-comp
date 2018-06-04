@@ -55,9 +55,6 @@ The parser code is in the .g4 file.
          
  - :white_check_mark: Branching variables declaration
 
- #### Additional Notes
- - limit locals assumes that the first argument of main function is constantly used
-
 ### Optimizations
  - :white_check_mark: Constant propagation
    - Works for both local variables and module variables
@@ -77,3 +74,5 @@ The parser code is in the .g4 file.
    - Divisions by self or 1
    - Bitwise-Shifts by 0
   
+   #### Additional Notes
+ - limit locals assumes that the first argument of main function is constantly used
