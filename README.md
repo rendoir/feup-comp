@@ -52,6 +52,8 @@ The parser code is in the .g4 file.
 
          a = [10];
          a = 5; //Put the number 5 in all position of the array
+         
+ - :white_check_mark: Branching variables declaration
 
  #### Additional Notes
  - limit locals assumes that the first argument of main function is constantly used
