@@ -11,8 +11,18 @@ The parser code is in the .g4 file.
 
 ## Usage
  * Generate the parser using 'antlr4 -Dlanguage=Python3 yal.g4'
- * Run the parser using 'python3 main.py <file_name>'
-
+ * Run the parser using:
+        
+       Usage:
+         python3 main.py <file_name> [options]
+        
+       Arguments:
+         file_name  - The absolute or relative path to the file to compile.
+        
+       Options:
+         --quiet         (-q)     - Runs the compiler silently, without any print to the console. Used for the testing script
+         --register=<n>  (-r=<n>) - Limits the number of registers to the number in '<n>'
+         --optimized     (-o)     - Optimizes the code generated
 
 ## ANTLR Syntax Highlighters
  * [Atom :heart_eyes: ](https://atom.io/packages/language-antlr)
