@@ -11,17 +11,17 @@ RESET       = "\033[0;0m"
 EXTENSION = '.tmp'
 
 verbose = True
+optimized = False
+register = 0
 
 # ParserParser class will have a method for each 'rule' in the parser.
 # So since the parser has rules such as 'vector', 'expression' and 'pyClass'
 # It generates a method to parse each one of these
 def main(argv):
     global verbose
-    if not correctUsage(argv):
-        printUsage()
+    if not correctUsage(argv) or not parseOptions(argv[2:]):
+        Printer.printUsage()
         return
-    else:
-        parseArgs(argv)
 
     input = FileStream(argv[1])
     printer = Printer.ErrorPrinter(input)
@@ -39,13 +39,13 @@ def main(argv):
         sys.exit(10)
 
 
-    module = Module()
+    module = CodeScope.Module()
     module.parseTree(tree, printer)
     module.semanticCheck(printer)
 
     sem_errors = printer.printMessages(verbose)
     if not sem_errors:
-        llir_tree = LowLevelTree(module)
+        llir_tree = Tree.LowLevelTree(module)
         file_name = extractFileName(argv[1]) + EXTENSION
         writeToFile(file_name, str(llir_tree))
         if verbose:
@@ -64,12 +64,12 @@ def writeToFile(file_name, content):
 
 def correctUsage(argv) -> bool:
     arg_n = len(argv)
-    if 2 <= arg_n <= 3:
+    if 2 <= arg_n <= 5:
         if not Path(argv[1]).is_file():
             print("File '" + argv[1] + "' does not exist!")
             return False
     else:
-        if arg_n > 3:
+        if arg_n > 5:
             print("Too many arguments!")
         else:
             print("Not enough arguments!")
@@ -77,13 +77,27 @@ def correctUsage(argv) -> bool:
 
     return True
 
-def printUsage():
-    print("Usage:\n    python3 main.py <file_name>\n")
-
-def parseArgs(argv):
+def parseOptions(argv) -> bool:
     global verbose
-    if '--quiet' in argv or '-q' in argv:
-        verbose = False
+    for arg in argv:
+        if '--quiet' == arg or '-q' == arg:
+            verbose = False
+        elif '--optimized' == arg or '-o' == arg:
+            optimized = True
+            Variable.Variable.optimized = True
+            Instruction.Operator.optimized = True
+        elif arg.startswith('--register=') or arg.startswith('-r='):
+            args = arg.split('=')
+            if len(args) == 2:
+                register = int(args[1])
+            else:
+                print("Register wrong format! '" + arg + "'")
+                return False
+        else:
+            print("Unknown option! '" + arg + "'")
+            return False
+
+    return True
 
 if __name__ == '__main__':
     main(sys.argv)

@@ -1,5 +1,5 @@
-
 class Variable:
+    optimized = False
     def __init__(self, name: str, type: str, decl: int, init: int):
         self.value = None
         self.name = name
@@ -42,7 +42,7 @@ class Variable:
         raise NotImplementedError("Should have implemented Variable::toLIR()")
 
     def unused(self) -> bool:
-        return isinstance(self, NumberVariable) and self.altered == 0 and self.value is not None
+        return isinstance(self, NumberVariable) and self.altered == 0 and self.value is not None and self.optimized
 
 class NumberVariable (Variable):
     def __init__(self, name: str, value: int, decl: int, init: int):

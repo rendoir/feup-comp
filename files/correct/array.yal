@@ -16,7 +16,7 @@ module array
 	function main()
 	{
 	 a = [N];
-   a = 5;
+   a = 5 / 5;
 	}
 
 }

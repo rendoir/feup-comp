@@ -31,6 +31,18 @@ BRANCH_DECL = "Variable may not be declared"
 
 ALREADY_DEF = "Variable already defined"
 
+def printUsage():
+    print("\nUsage:")
+    print("    python3 main.py <file_name> [options]\n")
+    print("Arguments:")
+    print(BOLD + "     file_name" + RESET + "   - Relative or absolute path to the file to compile\n")
+    print("Options:")
+    print(BOLD + "     --quiet     " + RESET + "(-q)      - Runs the compiler silently. Used mostly for testing the compiler")
+    print(BOLD + "     --register  " + RESET + "(-r=<n>)  - Limits the number of registers to " + UNDERLINE + "<n>" + RESET)
+    print(BOLD + "     --optimized " + RESET + "(-o)      - Optimizes the code generated")
+
+
+
 class ErrorPrinter:
     def __init__(self, source=None):
         if __debug__:

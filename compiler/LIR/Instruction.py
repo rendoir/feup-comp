@@ -233,17 +233,18 @@ class ArrAccess(ComplexInstruction):
         return (curr + 1, curr + 2)
 
 class Operator(ComplexInstruction):
+    optimized = False
     def __init__(self, left, right, operator):
         super(Operator, self).__init__()
         self.iinc = False
-        self.can_fold = False
         self.operator = operator
         self.code.append(left)
         self.code.append(right)
         self.code.append(operators[operator])
-        if self.canFoldConstant(left, right):
-            self.can_fold = True
-            self.operationUnfold(left, right)
+        if not self.deadOperation(self.code[0], self.code[1]):
+            if self.canFoldConstant(left, right) and self.optimized:
+                self.operationUnfold(left, right)
+
 
     def canFoldConstant(self, left, right) -> bool:
         return isinstance(left, Load) and isinstance(right, Load) and left.const is not None and right.const is not None
@@ -256,12 +257,7 @@ class Operator(ComplexInstruction):
             return (ret[0], ret[1] + 2)
 
     def __str__(self) -> str:
-        if self.can_fold:
-            return str(self.code[0])
-        elif len(self.code) > 1 and self.deadOperation(self.code[0], self.code[1]):
-            return str(self.code[0])
-        else:
-            return super(Operator, self).__str__()
+        return super(Operator, self).__str__()
 
     def deadOperation(self, left, right) -> bool:
         if isinstance(left, Load) and isinstance(right, Load):
@@ -373,7 +369,8 @@ class FillArray(ComplexInstruction):
         if isinstance(fill_number, Load):
             true_code.append(fill_number)
         else:
-            true_code.append(fill_number.code[0])
+            for code_line in fill_number.code:
+                true_code.append(code_line)
 
         true_code.append(Store(arr_name, var_stack, True))
         true_code.append('iinc ' + self.code[-2].var_access + ' ' + '1' + NL)
