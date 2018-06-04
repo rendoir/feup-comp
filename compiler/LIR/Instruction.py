@@ -68,7 +68,7 @@ class SimpleInstruction:
             if self.var is None:
                 if var_name in self.module_vars:
                     self.var_access = self.module_vars[var_name]
-                    if self.var_access.altered > 0:
+                    if not self.var_access.unused() > 0:
                         module_vars_used += 1
                 else:
                     raise AssertionError("SimpleInstruction: no var '" + var_name + "' in stack: " + printStack(var_stack), self.var_access)
@@ -93,11 +93,11 @@ class Load(SimpleInstruction):
         self.var_name = var_name
         self.negative = (not is_positive)
         self.size = size
-        if isinstance(self.var, Variable.NumberVariable) and self.var.altered is 0 and self.var.value is not None:
+        if isinstance(self.var, Variable.NumberVariable) and self.var.unused():
             self.const = self.var.value
             self.var = None
             self.var_access = None
-        elif isinstance(self.var_access, Variable.NumberVariable) and self.var_access.altered is 0 and self.var_access is not None:
+        elif isinstance(self.var_access, Variable.NumberVariable) and self.var_access.unused():
             self.const = self.var_access.value
             self.var = None
             self.var_access = None

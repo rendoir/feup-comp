@@ -6,19 +6,24 @@
 PROG_BEGIN='python3 main.py test.yal '
 ERRORS=0
 
+RESET="\033[0;0m"
+RED="\033[1;31m"
+GREEN="\033[1;32m"
+#!/bin/bash
+
 echo '--- CORRECT FILES START ---'
 for file_name in files/correct/*.yal; do
   python3 main.py $file_name --quiet
   RET_VALUE=$?
   if [ $RET_VALUE -eq 0 ]
   then
-    echo "OK '$file_name'"
+    echo -e "$GREEN OK $RESET'$file_name'"
   elif [ $RET_VALUE -eq 10 ]
   then
-    echo "ERROR --> '$file_name'"
+    echo -e "$RED ERROR $RESET--> '$file_name'"
     ERRORS=$ERRORS+1
   else
-    echo "FATAL ERROR ---> $file_name"
+    echo -e "$RED FATAL ERROR $RESET---> $file_name"
     exit 1
   fi
 done
@@ -30,13 +35,13 @@ for file_name in files/errors/*.yal; do
   RET_VALUE=$?
   if [ $RET_VALUE -eq 10 ]
   then
-    echo "OK '$file_name'"
+    echo -e "$GREEN OK $RESET'$file_name'"
   elif [ $RET_VALUE -eq 1 ]
   then
-    echo "ERROR --> $file_name"
+    echo -e "$RED ERROR $RESET--> $file_name"
     $ERRORS=$ERRORS+1
   else
-    echo "FATAL ERROR ---> $file_name"
+    echo -e "$RED FATAL ERROR $RESET---> $file_name"
     exit 1
   fi
 done

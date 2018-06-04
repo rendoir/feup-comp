@@ -323,7 +323,6 @@ class AssignEntry(Entry):
 
         self._processRight(assign_node.right, var_stack)
         if isinstance(assign_node.left.access, Stmt.ScalarAccess) and assign_node.left.access.arr_fill:
-            print("\n ------- ARRAY FILL ------- \n")
             self.pre_code.append(Instruction.FillArray(store_name, var_stack, self.right[0]))
             self.right = []
         else:
@@ -334,8 +333,7 @@ class AssignEntry(Entry):
 
             self.left = Instruction.Store(store_name, var_stack, in_array, assign_node.right.isArray())
             updated_var = self._updateStack(var_stack, assign_node.parent)
-            self.not_needed = self.isVarNeeded(assign_node, updated_var, store_name)
-
+            self.not_needed = self.isVarNotNeeded(assign_node, updated_var, store_name)
             if isinstance(self.right[0], Instruction.Operator) and self.canUseIInc(updated_var):
                 if self.right[0].tryUsingIInc(self.left.var_access):
                     self.left = ''
@@ -366,7 +364,7 @@ class AssignEntry(Entry):
             return left_matches or right_matches
         return False
 
-    def isVarNeeded(self, node, var, var_name) -> bool:
+    def isVarNotNeeded(self, node, var, var_name) -> bool:
         if var is not None:
             return var.unused()
         else:
@@ -442,11 +440,15 @@ class IfEntry(ComparisonEntry):
         global if_label
         labels = [(self.label_start + str(if_label)), (self.label_end + str(if_label))]
         if_label += 1
+        for pre_var in if_node.pre_vars:
+            stack.append(pre_var)
 
         super(IfEntry, self).__init__(if_node, stack, labels)
 
         stack_copy = stack[:]
         code = (self._processStmtList(if_node.code, stack), self._processStmtList(if_node.else_code, stack_copy))
+
+
         self.code = Instruction.IfBranching(self.left, self.right, if_node.test.op, code, labels)
 
     def stackCount(self, curr) -> (int, bool):

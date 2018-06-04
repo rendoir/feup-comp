@@ -225,6 +225,7 @@ class If(Scope):
         self.checking_else = False
         self.test = Stmt.ExprTest(node.children[0], self)
         self.else_code = []
+        self.pre_vars = []
 
         if node.children[1].children is not None:
             for stmt in node.children[1].children:
@@ -244,13 +245,16 @@ class If(Scope):
             if self.checking_else:
                 if not existing_var.diffType(var):
                     if existing_var.type == 'ARR':
-                        var_obj = ArrayVariable(name, (-1 if existing_var.size != var.size else var.size), (self.line, self.cols[0]), (self.line, self.cols[0]))
+                        var_obj = ArrayVariable(name, (None if existing_var.size != var.size else var.size), 1, 1)
                     else:
-                        var_obj = NumberVariable(name, (-1 if existing_var.value != var.value else var.value), (self.line, self.cols[0]), (self.line, self.cols[0]))
+                        var_obj = NumberVariable(name, (None if existing_var.value != var.value else var.value), 1, 1)
 
-                    if name in self.branched_vars:
-                        del self.branched_vars[name]
+                    if name in self.parent.branched_vars:
+                        del self.parent.branched_vars[name]
+                        del self.vars[name]
+
                     self.parent.addVar(name, var_obj)
+                    self.pre_vars.append(var_obj)
                 else:
                     self.parent.addVar(name, BranchedVariable(name, existing_var.type, var.type))
         else:
