@@ -1,0 +1,22 @@
+module array
+{
+  N = 10;
+
+  function test() {
+    if (N <= 6) {
+      branched_var = 5;
+    }
+    else {
+      branched_var = 8;
+    }
+
+    io.println(branched_var);
+  }
+
+	function main()
+	{
+	 a = [N];
+   a = 5 / 5;
+	}
+
+}

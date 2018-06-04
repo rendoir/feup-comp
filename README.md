@@ -11,8 +11,18 @@ The parser code is in the .g4 file.
 
 ## Usage
  * Generate the parser using 'antlr4 -Dlanguage=Python3 yal.g4'
- * Run the parser using 'python3 main.py <file_name>'
-
+ * Run the parser using:
+        
+       Usage:
+         python3 main.py <file_name> [options]
+        
+       Arguments:
+         file_name  - The absolute or relative path to the file to compile.
+        
+       Options:
+         --quiet         (-q)     - Runs the compiler silently, without any print to the console. Used for the testing script
+         --register=<n>  (-r=<n>) - Limits the number of registers to the number in '<n>'
+         --optimized     (-o)     - Optimizes the code generated
 
 ## ANTLR Syntax Highlighters
  * [Atom :heart_eyes: ](https://atom.io/packages/language-antlr)
@@ -48,10 +58,31 @@ The parser code is in the .g4 file.
  - :white_check_mark: Code for conditional instructions
  - :white_check_mark: Code for loops
  - :white_check_mark: Code to deal with arrays
-   - :x: Code to handle the following situation:
-   
+   - :white_check_mark: Code to handle the following situation:
+
          a = [10];
          a = 5; //Put the number 5 in all position of the array
+         
+ - :white_check_mark: Branching variables declaration
+
+### Optimizations
+ - :white_check_mark: Constant propagation
+   - Works for both local variables and module variables
  
- #### Additional Notes
+ - :white_check_mark: Constant folding
+ - :white_check_mark: While and If templating (saves 1 goto)
+ - :white_check_mark: Lower cost instruction selection
+   
+   - Checks the size of the constants to use and uses the lowest available instruction from bipush, sipush and ldc.
+   - Uses iload_#, istore_# when available
+   - Uses iinc when possible, even for subtraction, in which case the compiler changes the constant signal
+   
+- :white_check_mark: Algebraic Simplification
+   
+   - Sums/Subtractions by 0
+   - Multiplications by 1 or 0
+   - Divisions by self or 1
+   - Bitwise-Shifts by 0
+  
+   #### Additional Notes
  - limit locals assumes that the first argument of main function is constantly used

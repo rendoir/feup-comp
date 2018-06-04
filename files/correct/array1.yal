@@ -7,8 +7,6 @@ module array1
   {
 
    a=[N];
-
-
    i=0;
    while(i < N)
    {

@@ -1,4 +1,6 @@
 module constantRanges {
+  not_used = 10;
+
 	function f() {
 		a = 5; // iconst
 		b = -1; // iconst
@@ -7,6 +9,7 @@ module constantRanges {
 		e = -129; // does not fit in bipush
 		f = 32768; // does not fit in sipush
 		g = -32769; // does not fit in sipush
+    h = not_used;
 
 		io.println(a); // 5
 		io.println(b); // -1
@@ -15,6 +18,7 @@ module constantRanges {
 		io.println(e); // -129
 		io.println(f); // 32768
 		io.println(g); // -32769
+    io.println(h); // 10
 	}
 
 	function main() {

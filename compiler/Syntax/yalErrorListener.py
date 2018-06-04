@@ -33,20 +33,25 @@ SUBST = {
 }
 
 class yalErrorListener(ErrorListener):
+    def __init__(self, verbose):
+        super(yalErrorListener, self).__init__()
+        self.verbose = verbose
+
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
-        text_input = recognizer.getInputStream().tokenSource.inputStream.strdata
-        code_line = text_input.split('\n')[line-1]
-        (trimmed_line, trim_n) = Printer.ErrorPrinter.cropString(code_line)
-        line_col = str(line) + ':' + str(column)
+        if self.verbose:
+            text_input = recognizer.getInputStream().tokenSource.inputStream.strdata
+            code_line = text_input.split('\n')[line-1]
+            (trimmed_line, trim_n) = Printer.ErrorPrinter.cropString(code_line)
+            line_col = str(line) + ':' + str(column)
 
-        print(BOLD + yalErrorListener.replaceConstants(msg) + RESET)
-        print(RED + line_col + RESET + ' |  ' + trimmed_line)
-        for i in range(column-trim_n + len(line_col) + 4):
-            print(" ", end='')
-        for i in range(len(offendingSymbol.text)):
-            print(RED + "^", end='')
+            print(BOLD + yalErrorListener.replaceConstants(msg) + RESET)
+            print(RED + line_col + RESET + ' |  ' + trimmed_line)
+            for i in range(column-trim_n + len(line_col) + 4):
+                print(" ", end='')
+            for i in range(len(offendingSymbol.text)):
+                print(RED + "^", end='')
 
-        print(RESET + "\n")
+            print(RESET + "\n")
 
 
     def replaceConstants(code_line) -> str:

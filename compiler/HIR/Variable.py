@@ -1,13 +1,12 @@
-
 class Variable:
+    optimized = False
     def __init__(self, name: str, type: str, decl: int, init: int):
+        self.value = None
         self.name = name
         self.type = type
         self.line_init = init
         self.line_decl = decl
-
-    def __str__(self):
-        pass
+        self.altered = 0
 
     def setInit(self, value: int, init: int):
         raise NotImplementedError("Implement setInit()!")
@@ -37,11 +36,13 @@ class Variable:
         if var.isdigit() or (var[0] == '-' and var[1:].isdigit()):
             return True;
 
-        print('Var "' + var + '" not a digit')
         return False
 
     def toLIR() -> str:
         raise NotImplementedError("Should have implemented Variable::toLIR()")
+
+    def unused(self) -> bool:
+        return isinstance(self, NumberVariable) and self.altered == 0 and self.value is not None and self.optimized
 
 class NumberVariable (Variable):
     def __init__(self, name: str, value: int, decl: int, init: int):
@@ -49,7 +50,7 @@ class NumberVariable (Variable):
         self.value = value
 
     def __str__(self):
-        return self.name;
+        return "NUM -> '" + self.name + "' = " + str(self.value) + ", altered " + str(self.altered) + " times"
 
     def setInit(self, init: int):
         if self.init is None:
@@ -64,7 +65,7 @@ class ArrayVariable(Variable):
         self.size = size;
 
     def __str__(self):
-        return self.name + "[]"
+        return "ARR -> '" + self.name + "' = " + str(self.size) + ", altered " + str(self.altered) + " times"
 
     def validAccess(self, access) -> bool:
         if __debug__:
