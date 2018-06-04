@@ -44,10 +44,7 @@ This is taken into consideration as vertices[A] will contain B and vertices[B] w
 class Graph:
     def __init__(self, vertices = {}):
         self.vertices = copy.deepcopy(vertices)
-        self.name_to_original = {}
         self.name_to_current = {}
-        for vertex in vertices:
-            self.name_to_original[vertex.name] = vertex
         for vertex in self.vertices:
             self.name_to_current[vertex.name] = vertex
 
@@ -105,6 +102,9 @@ class Graph:
         print()
 
 def graphColoring(in_graph, n):
+    name_to_original = {}
+    for vertex in in_graph.vertices:
+        name_to_original[vertex.name] = vertex
     graph = Graph(in_graph.vertices)
     vertex_stack = list()
     while(graph.vertices):
@@ -129,7 +129,7 @@ def graphColoring(in_graph, n):
 
         #print("Coloring ", vertex_to_color)
        
-        original_vertex = graph.name_to_original[vertex_to_color.name]
+        original_vertex = name_to_original[vertex_to_color.name]
         
         for vertex_to in in_graph.vertices[original_vertex]:
             if vertex_to.name in graph.name_to_current:
@@ -153,25 +153,26 @@ def graphColoring(in_graph, n):
         
         
 # Test
-a = Vertex('A')
-b = Vertex('B')
-c = Vertex('C')
-d = Vertex('D')
-e = Vertex('E')
+if __name__ == '__main__':
+    a = Vertex('A')
+    b = Vertex('B')
+    c = Vertex('C')
+    d = Vertex('D')
+    e = Vertex('E')
 
-a.addNeighbours([b,c,e]) 
-b.addNeighbours([a,c])
-c.addNeighbours([b,d,a,e])
-d.addNeighbour(c)
-e.addNeighbours([a,c])
-    
-g = Graph()
-g.addVertices([a,b,c,d,e])
-g.addEdge(b,d)
-#g.show()
+    a.addNeighbours([b,c,e]) 
+    b.addNeighbours([a,c])
+    c.addNeighbours([b,d,a,e])
+    d.addNeighbour(c)
+    e.addNeighbours([a,c])
+        
+    g = Graph()
+    g.addVertices([a,b,c,d,e])
+    g.addEdge(b,d)
+    #g.show()
 
-g.removeVertex(b)
-print("Original:")
-g.show()
+    g.removeVertex(b)
+    print("Original:")
+    g.show()
 
-graphColoring(g,3)
+    graphColoring(g,3)
