@@ -1,5 +1,7 @@
 
-# feup-comp
+# YAL Compiler G43
+
+This project was developed in the Compilers course of MIEIC at FEUP. It's goal is to compile the yal language into java bytecode, to be executed by a JVM.
 
 ## Dependencies
  * [Python3](https://www.python.org/downloads/)
@@ -24,34 +26,58 @@ The parser code is in the .g4 file.
          --register=<n>  (-r=<n>) - Limits the number of registers to the number in '<n>'
          --optimized     (-o)     - Optimizes the code generated
 
-## ANTLR Syntax Highlighters
- * [Atom :heart_eyes: ](https://atom.io/packages/language-antlr)
- * [Sublime Text :neutral_face:](https://github.com/iuliux/SublimeText2-Antlr-syntax)
- * [VS Code :rage: ](https://marketplace.visualstudio.com/items?itemName=mike-lischke.vscode-antlr4)
- * [IDE :scream: ](http://www.antlr.org/tools.html)
-
-## Status
+## Compiler Status
 
 ### Syntactic Analysis
+ Most of the work here is done by the ANTLR tool that we used. It's main limitations are skipping a whole rule in case of failure. This is fine in most cases, however should there be a semantic error on the header of a function, until that error is corrected, no other syntactic error will be reported for that given function.
+ 
+ 
  - :white_check_mark: ANTLR handles all syntactic errors
  - :white_check_mark: ANTLR handles reporting more than one syntactic error
  - :white_check_mark: Error message when no input given
  - :white_check_mark: Improve overall readability of error messages.
 
 ### Semantic Analysis
-
- - :white_check_mark: Check if variable has already been declared.
- - :white_check_mark: Check if variable has been initialized when it is being used.
- - :white_check_mark: Check if the variable type is correct.
-   - :white_check_mark: Variable type defaults to scalar, unless variable previously declared as array
- - :white_check_mark: Cannot reassign array size
-
-        var.size = 20; //Error
-
- - :white_check_mark: Comparison between arrays is not possible
- - :white_check_mark: Check if type of arguments passed on function call is valid
- - :white_check_mark: Branching declaration (variables declared/initialized within if/else must be checked)
-
+ - :white_check_mark: Variables not defined in the current scope
+ - :white_check_mark: Variables used before being initialized
+ - :white_check_mark: Return variable of function not being initialized before function end
+ - :white_check_mark: Undefined function in current module
+ - :white_check_mark: Comparison between arrays is impossible.
+        - In this case the compiler suggests to compare the size of both arrays.
+        
+ - :white_check_mark: Applying operators to arrays.
+        - Suggest the use of <array>.size
+    
+ - :white_check_mark: Assigning <i>size</i> directly.
+        - Suggests the use of <array> = [<n>]
+        
+ - :white_check_mark: Different assignment types.
+ - :white_check_mark: Variable NaN as array size.
+ - :white_check_mark: Accessing non-array variables by index
+ - :white_check_mark: Out of bounds array accesses. (When possible)
+ 
+ - :white_check_mark: Accessing <i>size</i> property of non-array variable
+ - :white_check_mark: Positive array size numbers.
+        - Suggests the number must be positive
+ 
+ - :white_check_mark: Function redeclaration
+ - :white_check_mark: <i>arrSizeFromArr</i>
+ - :white_check_mark: Applying operator between diferent variable types
+ - :white_check_mark: Wrong function argument list.
+        - Shows what was expected and what it got.
+        
+ - :white_check_mark: Variable declared in a single <i>if</i> branch, but used after <i>if</i>
+        - Suggests declaring the variable in all possible code branches
+        
+ - :white_check_mark: Variable already defined
+        - This is merely a warning that pop's up on the following case:
+        
+        module mod {
+          a;
+          b = 2;
+          a; // Variable already defined, ignoring this line
+        }
+        
  ### Code Generation
  - :white_check_mark: Code for function calls
  - :white_check_mark: Code for arithmetic expressions
@@ -86,3 +112,11 @@ The parser code is in the .g4 file.
   
    #### Additional Notes
  - limit locals assumes that the first argument of main function is constantly used
+
+## The Group
+ - <b>NAME1:</b> Daniel Filipe Santos Marques, NR1: 201503822, GRADE1: 18.5, CONTRIBUTION1: 25%
+ - <b>NAME2:</b> Gonçalo Vasconcelos Cunha Miranda Moreno, NR2: 201503871, GRADE2: 18.5, CONTRIBUTION2: 25%
+ - <b>NAME3:</b> João Filipe Lopes de Carvalho, NR3: 201504875, GRADE3: 18.5, CONTRIBUTION3: 25%
+ - <b>NAME4:</b> João Francisco Barreiros de Almeida, NR4: 201505866, GRADE4: 18.5, CONTRIBUTION4: 25%
+ 
+        
