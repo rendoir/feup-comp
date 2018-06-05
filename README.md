@@ -43,13 +43,16 @@ The parser code is in the .g4 file.
  - :white_check_mark: Return variable of function not being initialized before function end
  - :white_check_mark: Undefined function in current module
  - :white_check_mark: Comparison between arrays is impossible.
-        - In this case the compiler suggests to compare the size of both arrays.
+        
+      - In this case the compiler suggests to compare the <i>size</i> of both arrays.
         
  - :white_check_mark: Applying operators to arrays.
-        - Suggest the use of <array>.size
+        
+      - Suggest the use of <array>.size
     
  - :white_check_mark: Assigning <i>size</i> directly.
-        - Suggests the use of <array> = [<n>]
+        
+      - Suggests the use of <array> = [<n>]
         
  - :white_check_mark: Different assignment types.
  - :white_check_mark: Variable NaN as array size.
@@ -58,25 +61,29 @@ The parser code is in the .g4 file.
  
  - :white_check_mark: Accessing <i>size</i> property of non-array variable
  - :white_check_mark: Positive array size numbers.
-        - Suggests the number must be positive
+        
+      - Suggests the number must be positive
  
  - :white_check_mark: Function redeclaration
  - :white_check_mark: <i>arrSizeFromArr</i>
  - :white_check_mark: Applying operator between diferent variable types
  - :white_check_mark: Wrong function argument list.
-        - Shows what was expected and what it got.
+        
+      - Shows what was expected and what it got.
         
  - :white_check_mark: Variable declared in a single <i>if</i> branch, but used after <i>if</i>
-        - Suggests declaring the variable in all possible code branches
+        
+      - Suggests declaring the variable in all possible code branches
         
  - :white_check_mark: Variable already defined
-        - This is merely a warning that pop's up on the following case:
         
-        module mod {
-          a;
-          b = 2;
-          a; // Variable already defined, ignoring this line
-        }
+      - This is merely a warning that pop's up on the following case:
+        
+                module mod {
+                a;
+                b = 2;
+                a; // Variable already defined, ignoring this line
+                }
         
  ### Code Generation
  - :white_check_mark: Code for function calls
