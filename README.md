@@ -23,7 +23,6 @@ The parser code is in the .g4 file.
         
        Options:
          --quiet         (-q)     - Runs the compiler silently, without any print to the console. Used for the testing script
-         --register=<n>  (-r=<n>) - Limits the number of registers to the number in '<n>'
          --optimized     (-o)     - Optimizes the code generated
 
 ## Compiler Status
