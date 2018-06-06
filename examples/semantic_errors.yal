@@ -55,9 +55,10 @@ module program1 {
       mx = library1.max(a, b);
       mn = library1.min(a, b);
     }
+    data[data] = 1;  //Error 11 cannot use array as array index
   }
 
-  function det(a) {
+  function det(a) {  //Error 12 function redeclared
     if (a < 0) {
     }
     else {}

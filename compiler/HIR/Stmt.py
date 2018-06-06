@@ -424,7 +424,7 @@ class ArrayAccess(Statement):
             index_var = getVar(self.index, var_list)
             if index_var is not None:
                 if not isinstance(index_var, NumberVariable):
-                    printer.arrSizeNaN(self.line, self.cols, var.type)
+                    printer.arrSizeNaN(self.line, self.cols, index_var.type, index_var.name)
                 else:
                     self.arr_size = index_var.value
             else:

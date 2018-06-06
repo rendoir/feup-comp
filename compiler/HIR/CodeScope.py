@@ -378,16 +378,12 @@ class Module(Scope):
             return (var_name, NumberVariable(var_name, value, (line, cols[0]), (line, cols[0])))
 
         else:
-            # return self.__checkArrSize(var, var_name, node.children[1], printer)
-
             arr_size = node.children[1].children[0]
             if not isinstance(var, ArrayVariable) and var is not None:
                 printer.diffTypes(line, cols, var.name, var.type, 'ARR')
                 return (var_name, None)
             else:
                 if isinstance(arr_size, yalParser.Scalar_accessContext):
-                    # print("CHILDS = "  + str(node.children))
-                    # print("ARR SIZE = " + str(node.children[0].getLine()) + ", cols = " + str(node.children[0].getColRange()))
                     size_var_info = ScalarAccess(arr_size, self)
                     size_var_info.checkSemantics(printer, [self.vars], True)
 

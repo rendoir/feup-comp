@@ -38,7 +38,6 @@ def printUsage():
     print(BOLD + "     file_name" + RESET + "   - Relative or absolute path to the file to compile\n")
     print("Options:")
     print(BOLD + "     --quiet     " + RESET + "(-q)      - Runs the compiler silently. Used mostly for testing the compiler")
-    print(BOLD + "     --register  " + RESET + "(-r=<n>)  - Limits the number of registers to " + UNDERLINE + "<n>" + RESET)
     print(BOLD + "     --optimized " + RESET + "(-o)      - Optimizes the code generated")
 
 
@@ -199,8 +198,8 @@ class ErrorPrinter:
     def diffTypes(self, line, cols, var, var_type, ass_type):
         self.__addError(line, cols, DIFF_TYPES, "Assigning '" + ass_type + "' to '" + var + "' which is of type '" + var_type + "' is not possible")
 
-    def arrSizeNaN(self, line, cols, type):
-        self.__addError(line, cols, NAN_ARR_SIZE, "Tried to use variable of type '" + type + "' as array size!")
+    def arrSizeNaN(self, line, cols, type, var_name):
+        self.__addError(line, cols, NAN_ARR_SIZE, "Tried to use variable of type '" + type + "' as array index!" + ErrorPrinter.__suggestion("Maybe you mean '" + var_name + ".size'"))
 
     def numberIndexing(self, line, cols, var_name, var_type):
         self.__addError(line, cols, NUMBER_INDEX, "Indexing variable '" + var_name + "' which is of type '" + var_type + "' is not possible!")
