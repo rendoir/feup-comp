@@ -1,0 +1,67 @@
+module program1 {
+  data=[100]; // vector of 100 integers
+  a[] = 1;
+  cenas;
+  N = 100;
+  c[] = [data];       //Error 1 cant use array as size
+  undef[] = [cenas];  //Error 2 cant use undefined (not initializd)
+  undef2 = [cenas];   // Error 3 not initialized
+  N;          // Warning variable already declared (no effect)
+  mx;         // attribute mx
+  mn;         // attribute mn
+
+  function main() {
+    wut = main();
+    vars = [2];
+    varss = det(vars, vars, 1);
+    varsss = 2;
+    cenas(varss, vars, varsss);   //Error 4 function does not exist
+    io.println("max: ", mx);
+    io.println("min: ", mn);
+  }
+
+  function a[]=det(d[], A[], b) {
+    wtf = data + c;       // Error 5 cant use 2 arrays
+    i = + 2;
+    d.size = 256;         // Error 6 cant assign size directly
+    if (i < 2) {
+      variable1 = 1;
+    }
+    else {
+      if (i <= 10) {
+        variable1 = 2;
+      }
+      else {
+        variable2 = 3;
+      }
+      if (variable1 < 2) {      // Error 7 variable1 may not exist
+        library1.max(i, i);
+      }
+    }
+
+    M = d.size - variable1;     // Error 8 variable1 may be 'ARR' or 'NUM'
+
+    if (b < 23) {
+      undef_var = [2];
+    }
+    else {
+      undef_var = 2;
+    }
+
+    new_var = undef_var;        // Error 9 cannot infer type
+
+    while (data < c) {          // Error 10 cant use 2 arrays
+      a = d[i]; i=i+1; b=d[i];
+      mx = library1.max(a, b);
+      mn = library1.min(a, b);
+    }
+  }
+
+  function det(a) {
+    if (a < 0) {
+    }
+    else {}
+  }
+
+  function empty() {}
+}

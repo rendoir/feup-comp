@@ -1,0 +1,23 @@
+module stackSize {
+	function f(a) {
+		if (a > h(a, a, a, a)) {
+			io.println("Greater");
+		} else {
+			io.println("Not greater");
+		}
+	}
+	function y=g(a) {
+		y = a * h(a, a, a, a);
+	}
+
+	function y = h(a, b, c, d) {
+		y = a + b;
+		y = y + c;
+		y = y + d;
+	}
+
+	function main() {
+		a = -1;
+		f(a);
+	}
+}
