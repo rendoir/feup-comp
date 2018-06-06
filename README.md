@@ -102,10 +102,11 @@ The parser code is in the .g4 file.
 To aid in the development of our compiler, the compiler goes through 2 stages of intermediate representation. 
 
 #### High-Level Intermediate Representation
-This representation has the following architecture:
+This representation has the highest abstraction level, and is still dependant on the yal language instructions. 
+The representation contains an inner symbol table which is built while the parser is traversing the HIR tree, looking for semantic errors. 
 
 #### Low-Level Intermediate Representation
-This representation has the following architecture:
+This representation has the lowest abstraction level and is mostly just composed of the simplest java bytecode instructions, such as <i>load</i>, <i>store</i> and operations. The leaves of the tree are composed of these 3 types of instructions, however the intermediate nodes still know whether the instruction is an assignment, an expression test and other types of yal instructions. This is made this way to allow for easier code optimizations.
 
 ### Code Generation
 Using the above mentioned LLIR, code generation becomes a lot easier, as all instructions from the HIR are now translated into simple <i>load</i> and <i>store</i> instructions. 
