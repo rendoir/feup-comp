@@ -65,7 +65,10 @@ The parser code is in the .g4 file.
       - Suggests the number must be positive
  
  - :white_check_mark: Function redeclaration
- - :white_check_mark: <i>arrSizeFromArr</i>
+ - :white_check_mark: Using an array variable as the index of an array access.
+ 
+      - Suggest using the <i>size</i> property of the array.
+ 
  - :white_check_mark: Applying operator between diferent variable types
  - :white_check_mark: Wrong function argument list.
         
