@@ -135,7 +135,14 @@ The following optimizations are made when that flag is activated:
    - Bitwise-Shifts by 0
   
 ### Test Suite
-To ensure that at every iteration of the compiler development there were no new bugs inserted, or some regression in functionality we setup multiple test suites to that end.
+To continuously test our compiler and make sure no old bug resurfaced, we created a script <i>test_script</i> that would run our compiler against a series of files present in the folder <i>files</i>. This script would merely check if the compiler would not crash while compiling the above mentioned files.
+After a successful compilation, the contents of the generated files would be validated by hand.
+
+To test the files do:
+
+       $> ./test_script
+       $> java -jar jasmin.jar <generated_file_name>
+       $> java <class file name>
 
 ### Task Distribution
 We aimed to keep the task distribution fairly uniform among the group members. At every iteration everyone would help as much as they were able to, however we believe these people stood out in the following areas:
