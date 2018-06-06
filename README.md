@@ -144,6 +144,9 @@ To test the files do:
        $> java -jar jasmin.jar <generated_file_name>
        $> java <class file name>
 
+### Overview
+We decided to use python3 on our project since we were already much more familiarized with the language and it would also allow us to use ANTLR which at the time seemed like a better and easier to use alternative to JavaCC. We did not regret this, however it is worth mentioning the most of the Checkpoint 1 expected compiler behaviour, such as being LL(1) and doing the lexical analysis were all handled by the ANTLR tool.
+
 ### Task Distribution
 We aimed to keep the task distribution fairly uniform among the group members. At every iteration everyone would help as much as they were able to, however we believe these people stood out in the following areas:
 
