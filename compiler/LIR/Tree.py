@@ -91,6 +91,7 @@ class LowLevelTree:
                 final_str += 'putstatic ' + self.mod_name + '/' + var_name + var_info.toLIR() + NL + NL
 
         final_str += 'return' + NL
+        final_str += '.end method'
         return final_str
 
 class Entry:

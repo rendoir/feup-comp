@@ -3,7 +3,7 @@
 # This script merely testes if the compiler does not crash while compiling the files
 # It does not check the code the compiler generates
 
-PROG_BEGIN='python3 main.py test.yal '
+PROG_BEGIN='python3 main.py '
 ERRORS=0
 
 RESET="\033[0;0m"
@@ -13,7 +13,7 @@ GREEN="\033[1;32m"
 
 echo '--- CORRECT FILES START ---'
 for file_name in files/correct/*.yal; do
-  python3 main.py $file_name --quiet
+  $PROG_BEGIN $file_name --quiet $1
   RET_VALUE=$?
   if [ $RET_VALUE -eq 0 ]
   then
@@ -31,7 +31,7 @@ echo '--- CORRECT FILES END ---'
 
 echo '--- ERROR FILES START ---'
 for file_name in files/errors/*.yal; do
-  python3 main.py $file_name --quiet
+  $PROG_BEGIN $file_name --quiet $1
   RET_VALUE=$?
   if [ $RET_VALUE -eq 10 ]
   then

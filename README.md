@@ -48,7 +48,7 @@ The parser code is in the .g4 file.
         
  - :white_check_mark: Applying operators to arrays.
         
-      - Suggest the use of <array>.size
+      - Suggest the use of <i>array.size</i>
     
  - :white_check_mark: Assigning <i>size</i> directly.
         
@@ -98,7 +98,24 @@ The parser code is in the .g4 file.
          
  - :white_check_mark: Branching variables declaration
 
+### Intermediate Representations
+To aid in the development of our compiler, the compiler goes through 2 stages of intermediate representation. 
+
+#### High-Level Intermediate Representation
+This representation has the following architecture:
+
+#### Low-Level Intermediate Representation
+This representation has the following architecture:
+
+### Code Generation
+Using the above mentioned LLIR, code generation becomes a lot easier, as all instructions from the HIR are now translated into simple <i>load</i> and <i>store</i> instructions. 
+No third-party libraries were used.
+
 ### Optimizations
+Our code uses as a default the <i>while</i> templating, even without the <i>-o</i> flag.
+
+The following optimizations are made when that flag is activated:
+
  - :white_check_mark: Constant propagation
    - Works for both local variables and module variables
  
@@ -117,8 +134,33 @@ The parser code is in the .g4 file.
    - Divisions by self or 1
    - Bitwise-Shifts by 0
   
-   #### Additional Notes
- - limit locals assumes that the first argument of main function is constantly used
+### Test Suite
+To ensure that at every iteration of the compiler development there were no new bugs inserted, or some regression in functionality we setup multiple test suites to that end.
+
+### Task Distribution
+We aimed to keep the task distribution fairly uniform among the group members. At every iteration everyone would help as much as they were able to, however we believe these people stood out in the following areas:
+
+- <b>Daniel Marques</b>
+
+	- Development of the to-be data flow analysis and graph coloring.
+	- Refinement of the syntactic analysis results.
+
+- <b>Gonçalo Moreno</b>
+	
+	- I helped develop the code for the semantic analysis and the associated HIR.
+	- Parsing the HIR to a LIR
+
+- <b>João Carvalho</b>
+
+	- Building the HIR and integrating it with the semantic analysis.
+	- Continuously testing the project for any errors my colleagues might have missed.
+	- Passing the grammar from JavaCC to ANTLR, and starting and keep python's good coding practices. 
+
+- <b>João Almeida</b>
+
+	- Responsible for the generation of the code and the LIR
+	- Development of the test suite.
+
 
 ## The Group
  - <b>NAME1:</b> Daniel Filipe Santos Marques, NR1: 201503822, GRADE1: 18.5, CONTRIBUTION1: 25%
